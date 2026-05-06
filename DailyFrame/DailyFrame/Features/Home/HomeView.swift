@@ -74,17 +74,43 @@ struct HomeView: View {
     private var missionSection: some View {
         AppCard {
             VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
-                Label("오늘의 미션", systemImage: "sparkles")
-                    .font(.system(.headline, design: .rounded, weight: .semibold))
-                    .foregroundStyle(AppTheme.Colors.accent)
+                HStack(alignment: .center, spacing: AppTheme.Spacing.small) {
+                    Label(viewModel.missionCategoryText, systemImage: viewModel.missionSymbolName)
+                        .font(.system(.headline, design: .rounded, weight: .semibold))
+                        .foregroundStyle(AppTheme.Colors.accent)
 
-                Text("지금 하루를 가장 잘 보여주는 장면을 골라보세요")
+                    Spacer()
+
+                    if viewModel.isTodayMissionCompleted {
+                        Label("완료", systemImage: "checkmark.circle.fill")
+                            .font(.system(.caption, design: .rounded, weight: .bold))
+                            .foregroundStyle(AppTheme.Colors.success)
+                    }
+                }
+
+                Text(viewModel.missionTitle)
                     .font(.system(.title3, design: .rounded, weight: .bold))
                     .foregroundStyle(AppTheme.Colors.textPrimary)
 
-                Text("핵심 루프를 먼저 붙이는 단계라 미션은 임시 고정 문구를 사용합니다.")
+                Text(viewModel.missionPrompt)
                     .font(.system(.subheadline, design: .rounded))
                     .foregroundStyle(AppTheme.Colors.textSecondary)
+
+                if viewModel.isTodayMissionCompleted {
+                    Text("오늘의 한 장으로 미션을 완료했습니다.")
+                        .font(.system(.subheadline, design: .rounded, weight: .medium))
+                        .foregroundStyle(AppTheme.Colors.success)
+                } else {
+                    Button(action: { isPresentingEditor = true }) {
+                        Label("미션으로 기록하기", systemImage: "camera.fill")
+                            .font(.system(.headline, design: .rounded, weight: .semibold))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(AppTheme.Colors.textPrimary)
+                            .foregroundStyle(Color.white)
+                            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    }
+                }
             }
         }
     }
