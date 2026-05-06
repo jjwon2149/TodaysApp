@@ -24,6 +24,9 @@ struct RootView: View {
             }
         }
         .background(AppTheme.Colors.background.ignoresSafeArea())
+        .task {
+            try? await BootstrapService().seedDefaultsIfNeeded()
+        }
     }
 
     @ViewBuilder
