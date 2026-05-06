@@ -1,0 +1,77 @@
+# DailyFrame
+
+하루 한 장 사진 기록을 중심으로 `streak`, `mission`, `calendar`, `reflection` 구조를 붙인 iOS 습관 앱 프로젝트입니다.
+
+## 방향
+
+- `BeReal`식 실시간 인증 앱으로 가지 않습니다.
+- `Duolingo`식 습관 형성 구조를 개인 사진 기록에 적용합니다.
+- 초기 MVP는 `개인 기록`, `로컬 저장`, `빠른 기록 루프`에 집중합니다.
+
+## 현재 Git 규칙
+
+### 추적 파일 정책
+
+1. `README.md`만 문서 파일로 추적합니다.
+2. 그 외 `*.md` 파일은 Git에 올리지 않습니다.
+3. Xcode 사용자별 파일과 빌드 산출물은 커밋하지 않습니다.
+
+### 커밋 단위 규칙
+
+1. 한 커밋은 하나의 의도만 가져갑니다.
+2. 화면 하나, 로직 하나, 버그 하나 수준으로 자릅니다.
+3. 문서 변경과 기능 변경은 가능하면 분리합니다.
+4. 확인하지 않은 변경은 커밋하지 않습니다.
+
+### 커밋 전 확인 규칙
+
+1. 이번 작업과 관계없는 파일이 섞이지 않았는지 확인합니다.
+2. 임시 코드와 디버그 출력이 남지 않았는지 확인합니다.
+3. 가능한 경우 빌드 또는 관련 검증을 먼저 수행합니다.
+4. `git diff --staged` 기준으로 마지막 검토 후 커밋합니다.
+
+### 커밋 메시지 형식
+
+```text
+type(scope): summary
+```
+
+예시:
+
+```text
+feat(home): add today mission card
+fix(streak): recalculate after entry deletion
+chore(repo): initialize xcode project and git rules
+```
+
+### type 규칙
+
+- `feat`: 기능 추가
+- `fix`: 버그 수정
+- `refactor`: 동작 유지 리팩터링
+- `design`: UI 구조/스타일 변경
+- `chore`: 설정/환경 정리
+- `test`: 테스트 작업
+- `docs`: README 변경
+
+## 앞으로의 작업 방식
+
+기본 흐름은 아래로 고정합니다.
+
+1. 작업 목표를 먼저 한 줄로 정의합니다.
+2. 관련 파일만 수정합니다.
+3. 변경 범위를 확인합니다.
+4. 필요한 검증을 수행합니다.
+5. 작업 단위가 닫히면 바로 커밋합니다.
+
+## 권장 초기 구현 순서
+
+1. `Home`
+2. `Capture`
+3. `EntryEditor`
+4. `Save`
+5. `Streak`
+6. `Calendar`
+7. `EntryDetail`
+8. `Notification`
+

@@ -1,0 +1,38 @@
+.DS_Store
+
+# Docs
+*.md
+!README.md
+
+# Xcode user data
+*.xcuserstate
+xcuserdata/
+
+# Build products
+DerivedData/
+build/
+.build/
+
+# Swift Package Manager
+.swiftpm/
+Packages/
+
+# Fastlane artifacts
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# CocoaPods
+Pods/
+
+# Carthage
+Carthage/Build/
+
+# Local environment files
+.env
+.env.*
+
+# Temporary files
+*.swp
+*.tmp
