@@ -9,6 +9,10 @@ enum DailyFrameDateFormatter {
         formatter("yyyy-MM").string(from: date)
     }
 
+    static func date(from localDateString: String) -> Date? {
+        formatter("yyyy-MM-dd").date(from: localDateString)
+    }
+
     private static func formatter(_ format: String) -> DateFormatter {
         let formatter = DateFormatter()
         formatter.calendar = Calendar(identifier: .gregorian)

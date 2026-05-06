@@ -16,16 +16,19 @@ final class EntryEditorViewModel: ObservableObject {
     private let existingEntry: DailyPhotoEntry?
     private let entryRepository: EntryRepository
     private let imageStorageService: ImageStorageService
+    private let streakService: StreakService
     private var imageData: Data?
 
     init(
         existingEntry: DailyPhotoEntry? = nil,
         entryRepository: EntryRepository = EntryRepository(),
-        imageStorageService: ImageStorageService = ImageStorageService()
+        imageStorageService: ImageStorageService = ImageStorageService(),
+        streakService: StreakService = StreakService()
     ) {
         self.existingEntry = existingEntry
         self.entryRepository = entryRepository
         self.imageStorageService = imageStorageService
+        self.streakService = streakService
         self.memo = existingEntry?.memo ?? ""
         self.selectedMood = existingEntry?.moodCode
 
@@ -90,6 +93,7 @@ final class EntryEditorViewModel: ObservableObject {
             entry.sourceType = "library"
 
             try await entryRepository.upsert(entry)
+            try await streakService.recordCompletion(for: dayKey)
             return true
         } catch {
             errorMessage = "기록을 저장하는 중 오류가 발생했습니다."
