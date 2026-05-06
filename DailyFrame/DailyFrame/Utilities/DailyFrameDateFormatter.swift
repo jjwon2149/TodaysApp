@@ -9,6 +9,10 @@ enum DailyFrameDateFormatter {
         formatter("yyyy-MM").string(from: date)
     }
 
+    static func monthDisplayString(from date: Date) -> String {
+        formatter("yyyy년 M월").string(from: date)
+    }
+
     static func date(from localDateString: String) -> Date? {
         formatter("yyyy-MM-dd").date(from: localDateString)
     }
