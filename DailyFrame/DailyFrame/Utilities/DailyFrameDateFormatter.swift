@@ -13,6 +13,14 @@ enum DailyFrameDateFormatter {
         formatter("yyyy년 M월").string(from: date)
     }
 
+    static func localDateDisplayString(from localDateString: String) -> String {
+        guard let date = date(from: localDateString) else {
+            return localDateString
+        }
+
+        return formatter("yyyy년 M월 d일 EEEE").string(from: date)
+    }
+
     static func date(from localDateString: String) -> Date? {
         formatter("yyyy-MM-dd").date(from: localDateString)
     }

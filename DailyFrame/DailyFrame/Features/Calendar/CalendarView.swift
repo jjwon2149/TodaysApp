@@ -30,7 +30,16 @@ struct CalendarView: View {
 
                             LazyVGrid(columns: columns, spacing: 10) {
                                 ForEach(viewModel.dayCells) { cell in
-                                    CalendarDayCell(cell: cell)
+                                    if let entry = cell.entry {
+                                        NavigationLink {
+                                            EntryDetailView(entry: entry)
+                                        } label: {
+                                            CalendarDayCell(cell: cell)
+                                        }
+                                        .buttonStyle(.plain)
+                                    } else {
+                                        CalendarDayCell(cell: cell)
+                                    }
                                 }
                             }
                         }
