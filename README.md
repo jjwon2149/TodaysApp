@@ -39,10 +39,16 @@ type(scope): summary
 예시:
 
 ```text
-feat(home): add today mission card
-fix(streak): recalculate after entry deletion
-chore(repo): initialize xcode project and git rules
+feat(home): 오늘 미션 카드 추가
+fix(streak): 기록 삭제 후 스트릭 재계산 수정
+chore(repo): Xcode 프로젝트와 Git 규칙 초기화
 ```
+
+기본 원칙:
+
+1. 커밋 메시지는 `한국어`로 작성합니다.
+2. `type(scope)`는 영문으로 유지하고, 설명은 한국어로 작성합니다.
+3. 외부 협업이나 배포 자동화 때문에 꼭 필요한 경우에만 영어 메시지를 사용합니다.
 
 ### type 규칙
 
@@ -74,4 +80,3 @@ chore(repo): initialize xcode project and git rules
 6. `Calendar`
 7. `EntryDetail`
 8. `Notification`
-
