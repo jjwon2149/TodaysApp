@@ -32,7 +32,9 @@ struct CalendarView: View {
                                 ForEach(viewModel.dayCells) { cell in
                                     if let entry = cell.entry {
                                         NavigationLink {
-                                            EntryDetailView(entry: entry)
+                                            EntryDetailView(entry: entry) {
+                                                await viewModel.loadMonth()
+                                            }
                                         } label: {
                                             CalendarDayCell(cell: cell)
                                         }

@@ -13,6 +13,10 @@ final class EntryEditorViewModel: ObservableObject {
 
     let moodOptions = ["좋음", "평온", "피곤", "설렘", "복잡", "그저 그럼"]
 
+    var saveButtonTitle: String {
+        existingEntry == nil ? "오늘의 한 장으로 저장" : "변경사항 저장"
+    }
+
     private let existingEntry: DailyPhotoEntry?
     private let entryRepository: EntryRepository
     private let imageStorageService: ImageStorageService
@@ -61,7 +65,7 @@ final class EntryEditorViewModel: ObservableObject {
         defer { isSaving = false }
 
         do {
-            let dayKey = DailyFrameDateFormatter.localDateString(from: .now)
+            let dayKey = existingEntry?.localDateString ?? DailyFrameDateFormatter.localDateString(from: .now)
             let storedPath: String
 
             if let imageData {

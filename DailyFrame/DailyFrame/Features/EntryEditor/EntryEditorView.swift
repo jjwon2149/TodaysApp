@@ -144,7 +144,7 @@ struct EntryEditorView: View {
                         .tint(.white)
                 }
 
-                Text(viewModel.isSaving ? "저장 중..." : "오늘의 한 장으로 저장")
+                Text(viewModel.isSaving ? "저장 중..." : viewModel.saveButtonTitle)
                     .font(.system(.headline, design: .rounded, weight: .semibold))
             }
             .frame(maxWidth: .infinity)

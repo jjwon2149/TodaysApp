@@ -2,7 +2,16 @@ import SwiftUI
 import UIKit
 
 struct EntryDetailView: View {
-    let entry: DailyPhotoEntry
+    @State private var entry: DailyPhotoEntry
+    @State private var isPresentingEditor = false
+
+    private let entryRepository = EntryRepository()
+    private let onChanged: () async -> Void
+
+    init(entry: DailyPhotoEntry, onChanged: @escaping () async -> Void = {}) {
+        _entry = State(initialValue: entry)
+        self.onChanged = onChanged
+    }
 
     var body: some View {
         ScrollView {
@@ -17,6 +26,20 @@ struct EntryDetailView: View {
         .background(AppTheme.Colors.background)
         .navigationTitle("기록 상세")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("수정") {
+                    isPresentingEditor = true
+                }
+                .font(.system(.body, design: .rounded, weight: .semibold))
+            }
+        }
+        .sheet(isPresented: $isPresentingEditor) {
+            EntryEditorView(existingEntry: entry) {
+                await reloadEntry()
+                await onChanged()
+            }
+        }
     }
 
     private var imageSection: some View {
@@ -64,7 +87,7 @@ struct EntryDetailView: View {
                     .font(.system(.headline, design: .rounded, weight: .semibold))
                     .foregroundStyle(AppTheme.Colors.textPrimary)
 
-                Text("과거 기록 수정 시 스트릭과 날짜 정책이 함께 정해져야 하므로 상세 조회와 분리해 구현합니다.")
+                Text("수정 시 기존 날짜는 유지됩니다. 삭제는 스트릭 재계산 정책과 함께 다음 단계에서 연결합니다.")
                     .font(.system(.subheadline, design: .rounded))
                     .foregroundStyle(AppTheme.Colors.textSecondary)
             }
@@ -97,6 +120,15 @@ struct EntryDetailView: View {
                 .font(.system(.subheadline, design: .rounded))
                 .foregroundStyle(AppTheme.Colors.textSecondary)
         }
+    }
+
+    @MainActor
+    private func reloadEntry() async {
+        guard let updatedEntry = try? await entryRepository.fetchEntry(for: entry.localDateString) else {
+            return
+        }
+
+        entry = updatedEntry
     }
 }
 
