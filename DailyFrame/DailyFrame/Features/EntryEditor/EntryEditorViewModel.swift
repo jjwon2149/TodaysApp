@@ -21,18 +21,21 @@ final class EntryEditorViewModel: ObservableObject {
     private let entryRepository: EntryRepository
     private let imageStorageService: ImageStorageService
     private let streakService: StreakService
+    private let missionService: MissionService
     private var imageData: Data?
 
     init(
         existingEntry: DailyPhotoEntry? = nil,
         entryRepository: EntryRepository = EntryRepository(),
         imageStorageService: ImageStorageService = ImageStorageService(),
-        streakService: StreakService = StreakService()
+        streakService: StreakService = StreakService(),
+        missionService: MissionService = MissionService()
     ) {
         self.existingEntry = existingEntry
         self.entryRepository = entryRepository
         self.imageStorageService = imageStorageService
         self.streakService = streakService
+        self.missionService = missionService
         self.memo = existingEntry?.memo ?? ""
         self.selectedMood = existingEntry?.moodCode
 
@@ -83,6 +86,7 @@ final class EntryEditorViewModel: ObservableObject {
                 return false
             }
 
+            let mission = try await missionService.mission(for: dayKey)
             var entry = existingEntry ?? DailyPhotoEntry(
                 localDateString: dayKey,
                 imageLocalPath: storedPath,
@@ -94,9 +98,12 @@ final class EntryEditorViewModel: ObservableObject {
             entry.imageLocalPath = storedPath
             entry.memo = memo.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : memo.trimmingCharacters(in: .whitespacesAndNewlines)
             entry.moodCode = selectedMood
+            entry.missionId = mission.id
+            entry.missionCompleted = true
             entry.sourceType = "library"
 
             try await entryRepository.upsert(entry)
+            _ = try await missionService.completeMission(for: dayKey)
             try await streakService.recordCompletion(for: dayKey)
             return true
         } catch {
