@@ -2,10 +2,17 @@ import SwiftUI
 import UIKit
 
 struct EntryDetailView: View {
+    @Environment(\.dismiss) private var dismiss
+
     @State private var entry: DailyPhotoEntry
     @State private var isPresentingEditor = false
+    @State private var isConfirmingDelete = false
+    @State private var isDeleting = false
+    @State private var errorMessage: String?
 
     private let entryRepository = EntryRepository()
+    private let imageStorageService = ImageStorageService()
+    private let streakService = StreakService()
     private let onChanged: () async -> Void
 
     init(entry: DailyPhotoEntry, onChanged: @escaping () async -> Void = {}) {
@@ -19,7 +26,7 @@ struct EntryDetailView: View {
                 imageSection
                 storySection
                 metadataSection
-                nextStepSection
+                policySection
             }
             .padding(AppTheme.Spacing.medium)
         }
@@ -39,6 +46,28 @@ struct EntryDetailView: View {
                 await reloadEntry()
                 await onChanged()
             }
+        }
+        .confirmationDialog("기록을 삭제할까요?", isPresented: $isConfirmingDelete, titleVisibility: .visible) {
+            Button("기록 삭제", role: .destructive) {
+                Task {
+                    await deleteEntry()
+                }
+            }
+
+            Button("취소", role: .cancel) {}
+        } message: {
+            Text("삭제한 기록은 캘린더에서 숨겨지고, 스트릭은 남은 기록 기준으로 다시 계산됩니다.")
+        }
+        .alert("삭제할 수 없습니다", isPresented: Binding(get: {
+            errorMessage != nil
+        }, set: { newValue in
+            if newValue == false {
+                errorMessage = nil
+            }
+        })) {
+            Button("확인", role: .cancel) {}
+        } message: {
+            Text(errorMessage ?? "")
         }
     }
 
@@ -80,16 +109,29 @@ struct EntryDetailView: View {
         }
     }
 
-    private var nextStepSection: some View {
+    private var policySection: some View {
         AppCard {
-            VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
-                Text("수정과 삭제는 다음 단계에서 연결합니다.")
+            VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
+                Text("기록 관리")
                     .font(.system(.headline, design: .rounded, weight: .semibold))
                     .foregroundStyle(AppTheme.Colors.textPrimary)
 
-                Text("수정 시 기존 날짜는 유지됩니다. 삭제는 스트릭 재계산 정책과 함께 다음 단계에서 연결합니다.")
+                Text("수정 시 날짜는 유지됩니다. 삭제하면 기록은 숨김 처리되고 스트릭은 활성 기록 기준으로 다시 계산됩니다.")
                     .font(.system(.subheadline, design: .rounded))
                     .foregroundStyle(AppTheme.Colors.textSecondary)
+
+                Button(role: .destructive) {
+                    isConfirmingDelete = true
+                } label: {
+                    Text(isDeleting ? "삭제 중..." : "기록 삭제")
+                        .font(.system(.headline, design: .rounded, weight: .semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(AppTheme.Colors.muted)
+                        .foregroundStyle(Color.red)
+                        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                }
+                .disabled(isDeleting)
             }
         }
     }
@@ -129,6 +171,29 @@ struct EntryDetailView: View {
         }
 
         entry = updatedEntry
+    }
+
+    @MainActor
+    private func deleteEntry() async {
+        guard isDeleting == false else { return }
+
+        isDeleting = true
+        defer { isDeleting = false }
+
+        do {
+            try await entryRepository.softDelete(localDateString: entry.localDateString)
+            try await streakService.rebuildFromActiveEntries()
+            try? imageStorageService.deleteFileIfExists(at: entry.imageLocalPath)
+
+            if let thumbnailLocalPath = entry.thumbnailLocalPath {
+                try? imageStorageService.deleteFileIfExists(at: thumbnailLocalPath)
+            }
+
+            await onChanged()
+            dismiss()
+        } catch {
+            errorMessage = "기록을 삭제하는 중 오류가 발생했습니다."
+        }
     }
 }
 

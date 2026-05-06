@@ -2,9 +2,14 @@ import Foundation
 
 struct StreakService {
     private let repository: StreakStateRepository
+    private let entryRepository: EntryRepository
 
-    init(repository: StreakStateRepository = StreakStateRepository()) {
+    init(
+        repository: StreakStateRepository = StreakStateRepository(),
+        entryRepository: EntryRepository = EntryRepository()
+    ) {
         self.repository = repository
+        self.entryRepository = entryRepository
     }
 
     func recordCompletion(for localDateString: String) async throws {
@@ -28,6 +33,52 @@ struct StreakService {
         state.currentStreak = nextStreak
         state.longestStreak = max(state.longestStreak, nextStreak)
         state.lastCompletedLocalDateString = localDateString
+        state.lastEvaluatedAtUTC = .now
+        state.lastKnownTimezoneIdentifier = TimeZone.current.identifier
+
+        try await repository.save(state)
+    }
+
+    func rebuildFromActiveEntries() async throws {
+        let entries = try await entryRepository.fetchAllActiveEntries()
+        let orderedDateStrings = entries.map(\.localDateString).sorted()
+        var state = try await repository.fetchPrimaryState()
+
+        guard orderedDateStrings.isEmpty == false else {
+            state.currentStreak = 0
+            state.longestStreak = 0
+            state.lastCompletedLocalDateString = nil
+            state.lastEvaluatedAtUTC = .now
+            state.lastKnownTimezoneIdentifier = TimeZone.current.identifier
+            try await repository.save(state)
+            return
+        }
+
+        var previousDate: Date?
+        var currentRun = 0
+        var longestRun = 0
+        var lastValidDateString: String?
+
+        for dateString in orderedDateStrings {
+            guard let date = DailyFrameDateFormatter.date(from: dateString) else {
+                continue
+            }
+
+            if let previousDate,
+               Calendar.current.dateComponents([.day], from: previousDate, to: date).day == 1 {
+                currentRun += 1
+            } else {
+                currentRun = 1
+            }
+
+            longestRun = max(longestRun, currentRun)
+            previousDate = date
+            lastValidDateString = dateString
+        }
+
+        state.currentStreak = currentRun
+        state.longestStreak = longestRun
+        state.lastCompletedLocalDateString = lastValidDateString
         state.lastEvaluatedAtUTC = .now
         state.lastKnownTimezoneIdentifier = TimeZone.current.identifier
 
