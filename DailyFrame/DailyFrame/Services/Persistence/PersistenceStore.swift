@@ -6,8 +6,10 @@ actor PersistenceStore {
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
     private let fileManager = FileManager.default
+    private let baseDirectoryURL: URL?
 
-    private init() {
+    init(baseDirectoryURL: URL? = nil) {
+        self.baseDirectoryURL = baseDirectoryURL
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
     }
 
@@ -46,6 +48,10 @@ actor PersistenceStore {
     }
 
     private func baseDirectory() throws -> URL {
+        if let baseDirectoryURL {
+            return baseDirectoryURL
+        }
+
         guard let directory = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
             throw CocoaError(.fileNoSuchFile)
         }

@@ -15,6 +15,7 @@ final class ProfileViewModel: ObservableObject {
     @Published private(set) var isUpdatingReminder = false
 
     private let entryRepository: EntryRepository
+    private let streakService: StreakService
     private let streakStateRepository: StreakStateRepository
     private let appSettingsRepository: AppSettingsRepository
     private let notificationService: NotificationService
@@ -23,12 +24,14 @@ final class ProfileViewModel: ObservableObject {
 
     init(
         entryRepository: EntryRepository = EntryRepository(),
+        streakService: StreakService = StreakService(),
         streakStateRepository: StreakStateRepository = StreakStateRepository(),
         appSettingsRepository: AppSettingsRepository = AppSettingsRepository(),
         notificationService: NotificationService = NotificationService(),
         calendar: Calendar = .current
     ) {
         self.entryRepository = entryRepository
+        self.streakService = streakService
         self.streakStateRepository = streakStateRepository
         self.appSettingsRepository = appSettingsRepository
         self.notificationService = notificationService
@@ -72,6 +75,7 @@ final class ProfileViewModel: ObservableObject {
         }
 
         do {
+            _ = try await streakService.evaluateMissedYesterdayIfNeeded()
             let state = try await streakStateRepository.fetchPrimaryState()
             currentStreak = max(state.currentStreak, 0)
             longestStreak = max(state.longestStreak, 0)

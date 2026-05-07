@@ -6,8 +6,14 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		BBD000022FAB900000000001 /* StreakServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBD000012FAB900000000001 /* StreakServiceTests.swift */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		4AF351A92FAB82320053AF89 /* DailyFrame.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DailyFrame.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		BBD000012FAB900000000001 /* StreakServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreakServiceTests.swift; sourceTree = "<group>"; };
+		BBD000032FAB900000000001 /* DailyFrameTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DailyFrameTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -26,6 +32,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		BBD000072FAB900000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -33,6 +46,7 @@
 			isa = PBXGroup;
 			children = (
 				4AF351AB2FAB82320053AF89 /* DailyFrame */,
+				BBD000042FAB900000000001 /* DailyFrameTests */,
 				4AF351AA2FAB82320053AF89 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,8 +55,17 @@
 			isa = PBXGroup;
 			children = (
 				4AF351A92FAB82320053AF89 /* DailyFrame.app */,
+				BBD000032FAB900000000001 /* DailyFrameTests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		BBD000042FAB900000000001 /* DailyFrameTests */ = {
+			isa = PBXGroup;
+			children = (
+				BBD000012FAB900000000001 /* StreakServiceTests.swift */,
+			);
+			path = DailyFrameTests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -70,7 +93,37 @@
 			productReference = 4AF351A92FAB82320053AF89 /* DailyFrame.app */;
 			productType = "com.apple.product-type.application";
 		};
+		BBD000052FAB900000000001 /* DailyFrameTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BBD0000D2FAB900000000001 /* Build configuration list for PBXNativeTarget "DailyFrameTests" */;
+			buildPhases = (
+				BBD000062FAB900000000001 /* Sources */,
+				BBD000072FAB900000000001 /* Frameworks */,
+				BBD000082FAB900000000001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				BBD0000A2FAB900000000001 /* PBXTargetDependency */,
+			);
+			name = DailyFrameTests;
+			packageProductDependencies = (
+			);
+			productName = DailyFrameTests;
+			productReference = BBD000032FAB900000000001 /* DailyFrameTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
+
+/* Begin PBXContainerItemProxy section */
+		BBD000092FAB900000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4AF351A12FAB82320053AF89 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4AF351A82FAB82320053AF89;
+			remoteInfo = DailyFrame;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXProject section */
 		4AF351A12FAB82320053AF89 /* Project object */ = {
@@ -82,6 +135,10 @@
 				TargetAttributes = {
 					4AF351A82FAB82320053AF89 = {
 						CreatedOnToolsVersion = 16.4;
+					};
+					BBD000052FAB900000000001 = {
+						CreatedOnToolsVersion = 16.4;
+						TestTargetID = 4AF351A82FAB82320053AF89;
 					};
 				};
 			};
@@ -100,12 +157,20 @@
 			projectRoot = "";
 			targets = (
 				4AF351A82FAB82320053AF89 /* DailyFrame */,
+				BBD000052FAB900000000001 /* DailyFrameTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		4AF351A72FAB82320053AF89 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BBD000082FAB900000000001 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -122,7 +187,23 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		BBD000062FAB900000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BBD000022FAB900000000001 /* StreakServiceTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		BBD0000A2FAB900000000001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4AF351A82FAB82320053AF89 /* DailyFrame */;
+			targetProxy = BBD000092FAB900000000001 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		4AF351B22FAB82340053AF89 /* Debug */ = {
@@ -304,6 +385,54 @@
 			};
 			name = Release;
 		};
+		BBD0000B2FAB900000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2TXBC7N5Q5;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mabataki.smithwrld999.DailyFrameTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DailyFrame.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/DailyFrame";
+			};
+			name = Debug;
+		};
+		BBD0000C2FAB900000000001 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2TXBC7N5Q5;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mabataki.smithwrld999.DailyFrameTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DailyFrame.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/DailyFrame";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -321,6 +450,15 @@
 			buildConfigurations = (
 				4AF351B52FAB82340053AF89 /* Debug */,
 				4AF351B62FAB82340053AF89 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		BBD0000D2FAB900000000001 /* Build configuration list for PBXNativeTarget "DailyFrameTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BBD0000B2FAB900000000001 /* Debug */,
+				BBD0000C2FAB900000000001 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

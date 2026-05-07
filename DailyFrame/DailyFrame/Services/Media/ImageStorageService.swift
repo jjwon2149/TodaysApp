@@ -7,6 +7,24 @@ struct ImageStorageService {
         let thumbnailURL: URL
     }
 
+    struct MaintenanceResult {
+        private(set) var backfilledThumbnailCount = 0
+        private(set) var deletedOrphanFileCount = 0
+        private(set) var failureCount = 0
+
+        fileprivate mutating func recordBackfilledThumbnail() {
+            backfilledThumbnailCount += 1
+        }
+
+        fileprivate mutating func recordDeletedOrphanFile() {
+            deletedOrphanFileCount += 1
+        }
+
+        fileprivate mutating func recordFailure() {
+            failureCount += 1
+        }
+    }
+
     private let fileManager: FileManager
     private let thumbnailPixelSize: CGFloat = 360
 
@@ -59,6 +77,90 @@ struct ImageStorageService {
         try fileManager.removeItem(atPath: path)
     }
 
+    @discardableResult
+    func performLaunchMaintenance(entryRepository: EntryRepository = EntryRepository()) async -> MaintenanceResult {
+        var result = MaintenanceResult()
+
+        do {
+            let entries = try await entryRepository.fetchAllActiveEntries()
+
+            for entry in entries where entry.thumbnailLocalPath == nil {
+                await backfillThumbnailIfNeeded(for: entry, entryRepository: entryRepository, result: &result)
+            }
+
+            let referencedPaths = try await entryRepository.fetchActiveMediaLocalPaths()
+            deleteOrphanFiles(referencedPaths: referencedPaths, result: &result)
+        } catch {
+            result.recordFailure()
+        }
+
+        return result
+    }
+
+    private func backfillThumbnailIfNeeded(
+        for entry: DailyPhotoEntry,
+        entryRepository: EntryRepository,
+        result: inout MaintenanceResult
+    ) async {
+        do {
+            let thumbnailURL = try saveThumbnail(
+                forImageAt: entry.imageLocalPath,
+                fileName: makeThumbnailFileName(for: entry)
+            )
+            let didUpdate = try await entryRepository.setThumbnailLocalPath(
+                thumbnailURL.path,
+                for: entry.localDateString,
+                matchingImageLocalPath: entry.imageLocalPath
+            )
+
+            if didUpdate {
+                result.recordBackfilledThumbnail()
+            } else {
+                try? deleteFileIfExists(at: thumbnailURL.path)
+            }
+        } catch {
+            result.recordFailure()
+        }
+    }
+
+    private func deleteOrphanFiles(referencedPaths: Set<String>, result: inout MaintenanceResult) {
+        let referencedPaths = Set(referencedPaths.map(standardizedPath))
+
+        do {
+            let directory = try baseDirectory()
+
+            guard fileManager.fileExists(atPath: directory.path) else {
+                return
+            }
+
+            let fileURLs = try fileManager.contentsOfDirectory(
+                at: directory,
+                includingPropertiesForKeys: [.isRegularFileKey],
+                options: [.skipsHiddenFiles]
+            )
+
+            for fileURL in fileURLs {
+                do {
+                    let resourceValues = try fileURL.resourceValues(forKeys: [.isRegularFileKey])
+                    guard resourceValues.isRegularFile == true else {
+                        continue
+                    }
+
+                    guard referencedPaths.contains(fileURL.standardizedFileURL.path) == false else {
+                        continue
+                    }
+
+                    try fileManager.removeItem(at: fileURL)
+                    result.recordDeletedOrphanFile()
+                } catch {
+                    result.recordFailure()
+                }
+            }
+        } catch {
+            result.recordFailure()
+        }
+    }
+
     private func saveThumbnailData(from data: Data, fileName: String) throws -> URL {
         guard let image = UIImage(data: data) else {
             throw CocoaError(.fileReadCorruptFile)
@@ -96,6 +198,14 @@ struct ImageStorageService {
         }
 
         return try saveImageData(data, fileName: fileName)
+    }
+
+    private func makeThumbnailFileName(for entry: DailyPhotoEntry) -> String {
+        "\(entry.localDateString)-\(UUID().uuidString)-thumbnail.jpg"
+    }
+
+    private func standardizedPath(_ path: String) -> String {
+        URL(fileURLWithPath: path).standardizedFileURL.path
     }
 
     private func baseDirectory() throws -> URL {
