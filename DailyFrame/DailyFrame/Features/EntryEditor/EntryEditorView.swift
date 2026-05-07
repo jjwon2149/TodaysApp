@@ -11,6 +11,8 @@ struct EntryEditorView: View {
     @StateObject private var viewModel: EntryEditorViewModel
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var isPresentingCamera = false
+    @State private var didNotifySaved = false
+    @State private var isSavedNotificationInFlight = false
 
     init(
         existingEntry: DailyPhotoEntry?,
@@ -29,10 +31,11 @@ struct EntryEditorView: View {
                 if let completionSummary = viewModel.completionSummary {
                     EntryCompletionView(
                         summary: completionSummary,
-                        actionTitle: completionActionTitle
+                        actionTitle: completionActionTitle,
+                        isActionDisabled: shouldHoldCompletionDismissal
                     ) {
                         Task {
-                            await onSaved()
+                            await notifySavedOnce()
                             dismiss()
                         }
                     }
@@ -63,6 +66,7 @@ struct EntryEditorView: View {
                 Text(viewModel.errorMessage ?? "")
             }
         }
+        .interactiveDismissDisabled(viewModel.isSaving || shouldHoldCompletionDismissal)
     }
 
     private var editorContent: some View {
@@ -200,6 +204,7 @@ struct EntryEditorView: View {
             Task {
                 let saved = await viewModel.saveEntry()
                 guard saved else { return }
+                await notifySavedOnce()
             }
         } label: {
             HStack {
@@ -219,11 +224,27 @@ struct EntryEditorView: View {
         }
         .disabled(viewModel.isSaving)
     }
+
+    private var shouldHoldCompletionDismissal: Bool {
+        viewModel.completionSummary != nil && (didNotifySaved == false || isSavedNotificationInFlight)
+    }
+
+    @MainActor
+    private func notifySavedOnce() async {
+        guard didNotifySaved == false else { return }
+
+        didNotifySaved = true
+        isSavedNotificationInFlight = true
+        defer { isSavedNotificationInFlight = false }
+
+        await onSaved()
+    }
 }
 
 private struct EntryCompletionView: View {
     let summary: EntryCompletionSummary
     let actionTitle: String
+    let isActionDisabled: Bool
     let onAction: () -> Void
 
     var body: some View {
@@ -302,6 +323,7 @@ private struct EntryCompletionView: View {
                 .foregroundStyle(Color.white)
                 .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         }
+        .disabled(isActionDisabled)
     }
 
     private func completionRow(title: String, value: String, symbol: String, tint: Color) -> some View {
