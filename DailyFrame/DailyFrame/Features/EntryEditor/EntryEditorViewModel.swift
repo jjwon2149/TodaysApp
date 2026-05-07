@@ -93,7 +93,8 @@ final class EntryEditorViewModel: ObservableObject {
         do {
             let dayKey = existingEntry?.localDateString ?? DailyFrameDateFormatter.localDateString(from: .now)
             let storedPath: String
-            let thumbnailPath: String
+            let thumbnailPath: String?
+            var createdPaths: [String] = []
 
             if let imageData {
                 let fileID = UUID().uuidString
@@ -104,8 +105,7 @@ final class EntryEditorViewModel: ObservableObject {
                 )
                 storedPath = storedImage.imageURL.path
                 thumbnailPath = storedImage.thumbnailURL.path
-
-                deleteReplacedImageFiles(newImagePath: storedPath, newThumbnailPath: thumbnailPath)
+                createdPaths = [storedImage.imageURL.path, storedImage.thumbnailURL.path]
             } else if let existingPath = existingEntry?.imageLocalPath {
                 storedPath = existingPath
 
@@ -113,46 +113,80 @@ final class EntryEditorViewModel: ObservableObject {
                     thumbnailPath = existingThumbnailPath
                 } else {
                     let fileName = "\(dayKey)-\(UUID().uuidString)-thumbnail.jpg"
-                    thumbnailPath = try imageStorageService.saveThumbnail(forImageAt: existingPath, fileName: fileName).path
+                    // Legacy thumbnail backfill is opportunistic; memo/mood edits should still save.
+                    if let generatedThumbnailPath = try? imageStorageService.saveThumbnail(
+                        forImageAt: existingPath,
+                        fileName: fileName
+                    ).path {
+                        thumbnailPath = generatedThumbnailPath
+                        createdPaths.append(generatedThumbnailPath)
+                    } else {
+                        thumbnailPath = nil
+                    }
                 }
             } else {
                 errorMessage = "저장하려면 먼저 사진을 선택해주세요."
                 return false
             }
 
-            let mission = try await missionService.mission(for: dayKey)
-            var entry = existingEntry ?? DailyPhotoEntry(
-                localDateString: dayKey,
-                imageLocalPath: storedPath,
-                sourceType: imageSourceType
-            )
+            var entryRollbackState: EntryRollbackState?
+            var didUpsertEntry = false
 
-            entry.localDateString = dayKey
-            entry.updatedAtUTC = .now
-            entry.imageLocalPath = storedPath
-            entry.thumbnailLocalPath = thumbnailPath
-            entry.memo = memo.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : memo.trimmingCharacters(in: .whitespacesAndNewlines)
-            entry.moodCode = selectedMood
-            entry.missionId = mission.id
-            entry.missionCompleted = true
-            entry.sourceType = imageSourceType
+            do {
+                entryRollbackState = try await makeEntryRollbackState()
+                let mission = try await missionService.mission(for: dayKey)
+                var entry = existingEntry ?? DailyPhotoEntry(
+                    localDateString: dayKey,
+                    imageLocalPath: storedPath,
+                    sourceType: imageSourceType
+                )
 
-            try await entryRepository.upsert(entry)
-            let completedMission = try await missionService.completeMission(for: dayKey)
-            try await streakService.recordCompletion(for: dayKey)
+                entry.localDateString = dayKey
+                entry.updatedAtUTC = .now
+                entry.imageLocalPath = storedPath
+                entry.thumbnailLocalPath = thumbnailPath
+                entry.memo = memo.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : memo.trimmingCharacters(in: .whitespacesAndNewlines)
+                entry.moodCode = selectedMood
+                entry.missionId = mission.id
+                entry.missionCompleted = true
+                entry.sourceType = imageSourceType
 
-            let streakState = (try? await streakStateRepository.fetchPrimaryState()) ?? StreakState(
-                currentStreak: 1,
-                longestStreak: 1,
-                lastCompletedLocalDateString: dayKey
-            )
-            completionSummary = EntryCompletionSummary(
-                currentStreak: max(streakState.currentStreak, 1),
-                missionTitle: completedMission.title,
-                missionCompleted: completedMission.isCompleted,
-                rewardText: "+20 XP",
-                returnMessage: Self.returnMessage(for: max(streakState.currentStreak, 1))
-            )
+                try await entryRepository.upsert(entry)
+                didUpsertEntry = true
+                let completedMission = try await missionService.completeMission(for: dayKey)
+                try await streakService.recordCompletion(for: dayKey)
+
+                deleteReplacedImageFiles(newImagePath: storedPath, newThumbnailPath: thumbnailPath)
+
+                let streakState = (try? await streakStateRepository.fetchPrimaryState()) ?? StreakState(
+                    currentStreak: 1,
+                    longestStreak: 1,
+                    lastCompletedLocalDateString: dayKey
+                )
+                completionSummary = EntryCompletionSummary(
+                    currentStreak: max(streakState.currentStreak, 1),
+                    missionTitle: completedMission.title,
+                    missionCompleted: completedMission.isCompleted,
+                    rewardText: "+20 XP",
+                    returnMessage: Self.returnMessage(for: max(streakState.currentStreak, 1))
+                )
+            } catch {
+                let shouldCleanupCreatedFiles: Bool
+
+                if didUpsertEntry == false {
+                    shouldCleanupCreatedFiles = true
+                } else if let entryRollbackState {
+                    shouldCleanupCreatedFiles = await restoreEntryRollbackState(entryRollbackState)
+                } else {
+                    shouldCleanupCreatedFiles = false
+                }
+
+                if shouldCleanupCreatedFiles {
+                    deleteCreatedImageFiles(createdPaths)
+                }
+                throw error
+            }
+
             return true
         } catch {
             errorMessage = "기록을 저장하는 중 오류가 발생했습니다."
@@ -160,8 +194,8 @@ final class EntryEditorViewModel: ObservableObject {
         }
     }
 
-    private func deleteReplacedImageFiles(newImagePath: String, newThumbnailPath: String) {
-        let preservedPaths = Set([newImagePath, newThumbnailPath])
+    private func deleteReplacedImageFiles(newImagePath: String, newThumbnailPath: String?) {
+        let preservedPaths = Set([newImagePath, newThumbnailPath].compactMap { $0 })
         var deletedPaths = Set<String>()
 
         for path in [existingEntry?.imageLocalPath, existingEntry?.thumbnailLocalPath].compactMap({ $0 }) {
@@ -172,6 +206,33 @@ final class EntryEditorViewModel: ObservableObject {
 
             try? imageStorageService.deleteFileIfExists(at: path)
         }
+    }
+
+    private func makeEntryRollbackState() async throws -> EntryRollbackState {
+        EntryRollbackState(entries: try await entryRepository.store.load().entries)
+    }
+
+    private func restoreEntryRollbackState(_ state: EntryRollbackState) async -> Bool {
+        do {
+            try await entryRepository.store.update { snapshot in
+                snapshot.entries = state.entries
+            }
+            return true
+        } catch {
+            return false
+        }
+    }
+
+    private func deleteCreatedImageFiles(_ paths: [String]) {
+        var deletedPaths = Set<String>()
+
+        for path in paths where deletedPaths.insert(path).inserted {
+            try? imageStorageService.deleteFileIfExists(at: path)
+        }
+    }
+
+    private struct EntryRollbackState {
+        let entries: [DailyPhotoEntry]
     }
 
     private static func returnMessage(for currentStreak: Int) -> String {
