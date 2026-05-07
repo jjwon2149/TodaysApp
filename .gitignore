@@ -4,6 +4,7 @@
 *.md
 !README.md
 !support.md
+!privacy.md
 
 # Xcode user data
 *.xcuserstate
