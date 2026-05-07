@@ -88,17 +88,28 @@ final class EntryEditorViewModel: ObservableObject {
         do {
             let dayKey = existingEntry?.localDateString ?? DailyFrameDateFormatter.localDateString(from: .now)
             let storedPath: String
+            let thumbnailPath: String
 
             if let imageData {
-                let fileName = "\(dayKey)-\(UUID().uuidString).jpg"
-                let fileURL = try imageStorageService.saveImageData(imageData, fileName: fileName)
-                storedPath = fileURL.path
+                let fileID = UUID().uuidString
+                let storedImage = try imageStorageService.saveEntryImageData(
+                    imageData,
+                    imageFileName: "\(dayKey)-\(fileID).jpg",
+                    thumbnailFileName: "\(dayKey)-\(fileID)-thumbnail.jpg"
+                )
+                storedPath = storedImage.imageURL.path
+                thumbnailPath = storedImage.thumbnailURL.path
 
-                if let oldPath = existingEntry?.imageLocalPath, oldPath != storedPath {
-                    try? imageStorageService.deleteFileIfExists(at: oldPath)
-                }
+                deleteReplacedImageFiles(newImagePath: storedPath, newThumbnailPath: thumbnailPath)
             } else if let existingPath = existingEntry?.imageLocalPath {
                 storedPath = existingPath
+
+                if let existingThumbnailPath = existingEntry?.thumbnailLocalPath {
+                    thumbnailPath = existingThumbnailPath
+                } else {
+                    let fileName = "\(dayKey)-\(UUID().uuidString)-thumbnail.jpg"
+                    thumbnailPath = try imageStorageService.saveThumbnail(forImageAt: existingPath, fileName: fileName).path
+                }
             } else {
                 errorMessage = "저장하려면 먼저 사진을 선택해주세요."
                 return false
@@ -114,6 +125,7 @@ final class EntryEditorViewModel: ObservableObject {
             entry.localDateString = dayKey
             entry.updatedAtUTC = .now
             entry.imageLocalPath = storedPath
+            entry.thumbnailLocalPath = thumbnailPath
             entry.memo = memo.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : memo.trimmingCharacters(in: .whitespacesAndNewlines)
             entry.moodCode = selectedMood
             entry.missionId = mission.id
@@ -127,6 +139,20 @@ final class EntryEditorViewModel: ObservableObject {
         } catch {
             errorMessage = "기록을 저장하는 중 오류가 발생했습니다."
             return false
+        }
+    }
+
+    private func deleteReplacedImageFiles(newImagePath: String, newThumbnailPath: String) {
+        let preservedPaths = Set([newImagePath, newThumbnailPath])
+        var deletedPaths = Set<String>()
+
+        for path in [existingEntry?.imageLocalPath, existingEntry?.thumbnailLocalPath].compactMap({ $0 }) {
+            guard preservedPaths.contains(path) == false,
+                  deletedPaths.insert(path).inserted else {
+                continue
+            }
+
+            try? imageStorageService.deleteFileIfExists(at: path)
         }
     }
 }
