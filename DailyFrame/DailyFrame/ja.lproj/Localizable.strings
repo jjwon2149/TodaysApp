@@ -17,7 +17,7 @@
 "home.header.streak_active" = "現在%d日連続で記録中です";
 "home.header.streak_empty" = "今日の一枚から記録を始めましょう";
 "home.streak.title" = "%d日ストリーク";
-"home.streak.summary" = "最高%d日・Freeze %d個保有";
+"home.streak.summary" = "最高%d日・Freezeを%d個保有";
 "home.mission.default_title" = "今日のミッション";
 "home.mission.default_prompt" = "今日を代表する場面を一枚残しましょう。";
 "home.mission.completed" = "今日の一枚でミッションを達成しました。";
@@ -98,7 +98,7 @@
 "entry.image.load_failed" = "写真を読み込めませんでした";
 
 "profile.header.title" = "私の記録";
-"profile.total_entries" = "これまで%d日を残しました";
+"profile.total_entries" = "これまでに%d日分を記録しました";
 "profile.streak.current" = "現在";
 "profile.streak.best" = "最高";
 "profile.notification.title" = "毎日の記録リマインダー";
@@ -127,7 +127,7 @@
 "mission.category.habit" = "習慣";
 "mission.category.sense" = "感覚";
 "mission.today_scene.title" = "今日を代表する場面";
-"mission.today_scene.prompt" = "今の一日をいちばんよく表す場面を一枚残しましょう。";
+"mission.today_scene.prompt" = "今日一日をいちばんよく表す場面を一枚残しましょう。";
 "mission.favorite_color.title" = "今日の色";
 "mission.favorite_color.prompt" = "今日なぜか目に入った色が写った場面を探してみましょう。";
 "mission.place_stayed.title" = "長くいた場所";
