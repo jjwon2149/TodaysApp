@@ -42,7 +42,7 @@ struct EntryDetailView: View {
             }
         }
         .sheet(isPresented: $isPresentingEditor) {
-            EntryEditorView(existingEntry: entry) {
+            EntryEditorView(existingEntry: entry, completionActionTitle: "기록으로 돌아가기") {
                 await reloadEntry()
                 await onChanged()
             }
@@ -140,6 +140,8 @@ struct EntryDetailView: View {
         switch entry.sourceType {
         case "library":
             return "앨범"
+        case "camera":
+            return "카메라"
         default:
             return entry.sourceType
         }

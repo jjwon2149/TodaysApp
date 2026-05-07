@@ -13,16 +13,16 @@ final class HomeViewModel: ObservableObject {
     @Published private(set) var todayMission: DailyMission?
 
     private let entryRepository: EntryRepository
-    private let streakStateRepository: StreakStateRepository
+    private let streakService: StreakService
     private let missionService: MissionService
 
     init(
         entryRepository: EntryRepository = EntryRepository(),
-        streakStateRepository: StreakStateRepository = StreakStateRepository(),
+        streakService: StreakService = StreakService(),
         missionService: MissionService = MissionService()
     ) {
         self.entryRepository = entryRepository
-        self.streakStateRepository = streakStateRepository
+        self.streakService = streakService
         self.missionService = missionService
     }
 
@@ -80,7 +80,7 @@ final class HomeViewModel: ObservableObject {
 
     private func loadStreak() async {
         do {
-            let state = try await streakStateRepository.fetchPrimaryState()
+            let state = try await streakService.evaluateMissedYesterdayIfNeeded()
             currentStreak = state.currentStreak
             longestStreak = state.longestStreak
             freezeCount = state.freezeCount
