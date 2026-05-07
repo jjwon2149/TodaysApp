@@ -45,15 +45,15 @@ final class HomeViewModel: ObservableObject {
     }
 
     var missionTitle: String {
-        todayMission?.title ?? L10n.string("home.mission.default_title")
+        todayMission?.localizedTitle ?? L10n.string("home.mission.default_title")
     }
 
     var missionPrompt: String {
-        todayMission?.prompt ?? L10n.string("home.mission.default_prompt")
+        todayMission?.localizedPrompt ?? L10n.string("home.mission.default_prompt")
     }
 
     var missionCategoryText: String {
-        todayMission?.category ?? L10n.string("mission.category.record")
+        todayMission?.localizedCategory ?? L10n.string("mission.category.record")
     }
 
     var missionSymbolName: String {

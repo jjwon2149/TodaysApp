@@ -165,7 +165,7 @@ final class EntryEditorViewModel: ObservableObject {
                 )
                 completionSummary = EntryCompletionSummary(
                     currentStreak: max(streakState.currentStreak, 1),
-                    missionTitle: completedMission.title,
+                    missionTitle: completedMission.localizedTitle,
                     missionCompleted: completedMission.isCompleted,
                     rewardText: L10n.string("editor.completion.reward_xp"),
                     returnMessage: Self.returnMessage(for: max(streakState.currentStreak, 1))

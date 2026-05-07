@@ -10,6 +10,9 @@
 "tab.calendar" = "캘린더";
 "tab.profile" = "보관함";
 
+"date.format.month" = "yyyy년 M월";
+"date.format.full" = "yyyy년 M월 d일 EEEE";
+
 "home.header.title" = "오늘도 한 장 남겨볼까요?";
 "home.header.streak_active" = "현재 %d일 연속 기록 중입니다";
 "home.header.streak_empty" = "오늘 한 장으로 기록을 시작해보세요";

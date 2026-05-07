@@ -35,9 +35,9 @@ struct MissionService {
             id: "\(localDateString)-\(template.id)",
             localDateString: localDateString,
             templateID: template.id,
-            title: L10n.string(template.titleKey),
-            prompt: L10n.string(template.promptKey),
-            category: L10n.string(template.categoryKey),
+            title: template.titleKey,
+            prompt: template.promptKey,
+            category: template.categoryKey,
             symbolName: template.symbolName
         )
     }
