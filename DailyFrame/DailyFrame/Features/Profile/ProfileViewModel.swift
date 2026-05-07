@@ -4,29 +4,53 @@ import UserNotifications
 
 @MainActor
 final class ProfileViewModel: ObservableObject {
+    @Published private(set) var totalEntryCount = 0
+    @Published private(set) var currentStreak = 0
+    @Published private(set) var longestStreak = 0
+    @Published private(set) var profileStatsStatusMessage: String?
     @Published private(set) var reminderEnabled = false
     @Published private(set) var reminderTime: Date
     @Published private(set) var notificationStatusMessage = "알림 상태를 확인하는 중입니다."
     @Published private(set) var errorMessage: String?
     @Published private(set) var isUpdatingReminder = false
 
+    private let entryRepository: EntryRepository
+    private let streakStateRepository: StreakStateRepository
     private let appSettingsRepository: AppSettingsRepository
     private let notificationService: NotificationService
     private var appSettings = AppSettings()
     private var calendar: Calendar
 
     init(
+        entryRepository: EntryRepository = EntryRepository(),
+        streakStateRepository: StreakStateRepository = StreakStateRepository(),
         appSettingsRepository: AppSettingsRepository = AppSettingsRepository(),
         notificationService: NotificationService = NotificationService(),
         calendar: Calendar = .current
     ) {
+        self.entryRepository = entryRepository
+        self.streakStateRepository = streakStateRepository
         self.appSettingsRepository = appSettingsRepository
         self.notificationService = notificationService
         self.calendar = calendar
         self.reminderTime = Self.date(hour: 21, minute: 0, calendar: calendar)
     }
 
+    var totalEntriesText: String {
+        "지금까지 \(totalEntryCount)일을 남겼습니다"
+    }
+
+    var currentStreakText: String {
+        "\(currentStreak)일"
+    }
+
+    var longestStreakText: String {
+        "\(longestStreak)일"
+    }
+
     func load() async {
+        await loadProfileStats()
+
         do {
             appSettings = try await appSettingsRepository.fetchSettings()
             syncPublishedState(from: appSettings)
@@ -34,6 +58,30 @@ final class ProfileViewModel: ObservableObject {
         } catch {
             notificationStatusMessage = "알림 설정을 불러오지 못했습니다."
         }
+    }
+
+    private func loadProfileStats() async {
+        var didFail = false
+
+        do {
+            let entries = try await entryRepository.fetchAllActiveEntries()
+            totalEntryCount = entries.count
+        } catch {
+            totalEntryCount = 0
+            didFail = true
+        }
+
+        do {
+            let state = try await streakStateRepository.fetchPrimaryState()
+            currentStreak = max(state.currentStreak, 0)
+            longestStreak = max(state.longestStreak, 0)
+        } catch {
+            currentStreak = 0
+            longestStreak = 0
+            didFail = true
+        }
+
+        profileStatsStatusMessage = didFail ? "기록 통계를 불러오지 못했습니다." : nil
     }
 
     func setReminderEnabled(_ isEnabled: Bool) async {
