@@ -23,6 +23,7 @@ final class EntryEditorViewModel: ObservableObject {
     private let streakService: StreakService
     private let missionService: MissionService
     private var imageData: Data?
+    private var imageSourceType: String
 
     init(
         existingEntry: DailyPhotoEntry? = nil,
@@ -38,6 +39,7 @@ final class EntryEditorViewModel: ObservableObject {
         self.missionService = missionService
         self.memo = existingEntry?.memo ?? ""
         self.selectedMood = existingEntry?.moodCode
+        self.imageSourceType = existingEntry?.sourceType ?? "library"
 
         if let path = existingEntry?.imageLocalPath {
             self.previewImage = UIImage(contentsOfFile: path)
@@ -56,9 +58,25 @@ final class EntryEditorViewModel: ObservableObject {
 
             previewImage = image
             imageData = image.jpegData(compressionQuality: 0.86) ?? data
+            imageSourceType = "library"
         } catch {
             errorMessage = "사진을 가져오는 중 오류가 발생했습니다."
         }
+    }
+
+    func loadCapturedImage(_ image: UIImage) {
+        guard let data = image.jpegData(compressionQuality: 0.86) else {
+            errorMessage = "촬영한 사진을 처리하지 못했습니다. 다시 촬영하거나 앨범에서 선택해주세요."
+            return
+        }
+
+        previewImage = image
+        imageData = data
+        imageSourceType = "camera"
+    }
+
+    func handleCameraCaptureFailure(_ error: Error) {
+        errorMessage = error.localizedDescription
     }
 
     func saveEntry() async -> Bool {
@@ -90,7 +108,7 @@ final class EntryEditorViewModel: ObservableObject {
             var entry = existingEntry ?? DailyPhotoEntry(
                 localDateString: dayKey,
                 imageLocalPath: storedPath,
-                sourceType: "library"
+                sourceType: imageSourceType
             )
 
             entry.localDateString = dayKey
@@ -100,7 +118,7 @@ final class EntryEditorViewModel: ObservableObject {
             entry.moodCode = selectedMood
             entry.missionId = mission.id
             entry.missionCompleted = true
-            entry.sourceType = "library"
+            entry.sourceType = imageSourceType
 
             try await entryRepository.upsert(entry)
             _ = try await missionService.completeMission(for: dayKey)

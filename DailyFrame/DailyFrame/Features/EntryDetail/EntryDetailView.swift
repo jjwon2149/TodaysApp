@@ -140,6 +140,8 @@ struct EntryDetailView: View {
         switch entry.sourceType {
         case "library":
             return "앨범"
+        case "camera":
+            return "카메라"
         default:
             return entry.sourceType
         }
