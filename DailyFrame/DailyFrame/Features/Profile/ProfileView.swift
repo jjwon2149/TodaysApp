@@ -29,13 +29,6 @@ struct ProfileView: View {
                         summaryCard(title: "최고", value: viewModel.longestStreakText)
                     }
 
-                    AppCard {
-                        VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
-                            settingsRow(title: "배지 보기", symbol: "medal.fill")
-                            settingsRow(title: "프리미엄 살펴보기", symbol: "sparkles")
-                        }
-                    }
-
                     notificationSettingsSection
                 }
                 .padding(AppTheme.Spacing.medium)
@@ -59,23 +52,6 @@ struct ProfileView: View {
                     .font(.system(.title2, design: .rounded, weight: .bold))
                     .foregroundStyle(AppTheme.Colors.textPrimary)
             }
-        }
-    }
-
-    private func settingsRow(title: String, symbol: String) -> some View {
-        HStack(spacing: AppTheme.Spacing.medium) {
-            Image(systemName: symbol)
-                .foregroundStyle(AppTheme.Colors.accent)
-                .frame(width: 28)
-
-            Text(title)
-                .font(.system(.body, design: .rounded, weight: .medium))
-
-            Spacer()
-
-            Image(systemName: "chevron.right")
-                .font(.footnote.weight(.semibold))
-                .foregroundStyle(AppTheme.Colors.textSecondary)
         }
     }
 
