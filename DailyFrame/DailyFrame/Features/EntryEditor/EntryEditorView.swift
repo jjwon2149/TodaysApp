@@ -4,6 +4,7 @@ import UIKit
 
 struct EntryEditorView: View {
     let existingEntry: DailyPhotoEntry?
+    let completionActionTitle: String
     let onSaved: () async -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -11,28 +12,33 @@ struct EntryEditorView: View {
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var isPresentingCamera = false
 
-    init(existingEntry: DailyPhotoEntry?, onSaved: @escaping () async -> Void) {
+    init(
+        existingEntry: DailyPhotoEntry?,
+        completionActionTitle: String = "홈으로 돌아가기",
+        onSaved: @escaping () async -> Void
+    ) {
         self.existingEntry = existingEntry
+        self.completionActionTitle = completionActionTitle
         self.onSaved = onSaved
         _viewModel = StateObject(wrappedValue: EntryEditorViewModel(existingEntry: existingEntry))
     }
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.large) {
-                    previewSection
-                    memoSection
-                    moodSection
-                    saveSection
+            Group {
+                if let completionSummary = viewModel.completionSummary {
+                    EntryCompletionView(
+                        summary: completionSummary,
+                        actionTitle: completionActionTitle
+                    ) {
+                        Task {
+                            await onSaved()
+                            dismiss()
+                        }
+                    }
+                } else {
+                    editorContent
                 }
-                .padding(AppTheme.Spacing.medium)
-            }
-            .background(AppTheme.Colors.background)
-            .navigationTitle(existingEntry == nil ? "오늘 기록" : "기록 수정")
-            .navigationBarTitleDisplayMode(.inline)
-            .task(id: selectedPhotoItem) {
-                await viewModel.loadPhotoItem(selectedPhotoItem)
             }
             .sheet(isPresented: $isPresentingCamera) {
                 CameraCaptureView { image in
@@ -56,6 +62,24 @@ struct EntryEditorView: View {
             } message: {
                 Text(viewModel.errorMessage ?? "")
             }
+        }
+    }
+
+    private var editorContent: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: AppTheme.Spacing.large) {
+                previewSection
+                memoSection
+                moodSection
+                saveSection
+            }
+            .padding(AppTheme.Spacing.medium)
+        }
+        .background(AppTheme.Colors.background)
+        .navigationTitle(existingEntry == nil ? "오늘 기록" : "기록 수정")
+        .navigationBarTitleDisplayMode(.inline)
+        .task(id: selectedPhotoItem) {
+            await viewModel.loadPhotoItem(selectedPhotoItem)
         }
     }
 
@@ -176,8 +200,6 @@ struct EntryEditorView: View {
             Task {
                 let saved = await viewModel.saveEntry()
                 guard saved else { return }
-                await onSaved()
-                dismiss()
             }
         } label: {
             HStack {
@@ -196,5 +218,111 @@ struct EntryEditorView: View {
             .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         }
         .disabled(viewModel.isSaving)
+    }
+}
+
+private struct EntryCompletionView: View {
+    let summary: EntryCompletionSummary
+    let actionTitle: String
+    let onAction: () -> Void
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: AppTheme.Spacing.large) {
+                headerSection
+                rewardSection
+                actionButton
+            }
+            .padding(AppTheme.Spacing.medium)
+        }
+        .background(AppTheme.Colors.background)
+        .navigationTitle("완료")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private var headerSection: some View {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 56, weight: .semibold))
+                .foregroundStyle(AppTheme.Colors.success)
+
+            VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
+                Text("기록 완료")
+                    .font(.system(.largeTitle, design: .rounded, weight: .bold))
+                    .foregroundStyle(AppTheme.Colors.textPrimary)
+
+                Text(summary.returnMessage)
+                    .font(.system(.body, design: .rounded))
+                    .foregroundStyle(AppTheme.Colors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.top, AppTheme.Spacing.xLarge)
+    }
+
+    private var rewardSection: some View {
+        AppCard {
+            VStack(alignment: .leading, spacing: AppTheme.Spacing.large) {
+                Text("오늘 보상")
+                    .font(.system(.headline, design: .rounded, weight: .semibold))
+                    .foregroundStyle(AppTheme.Colors.textPrimary)
+
+                completionRow(
+                    title: "현재 스트릭",
+                    value: "\(summary.currentStreak)일",
+                    symbol: "flame.fill",
+                    tint: AppTheme.Colors.accent
+                )
+
+                completionRow(
+                    title: summary.missionTitle,
+                    value: summary.missionCompleted ? "미션 완료" : "확인 필요",
+                    symbol: "checkmark.seal.fill",
+                    tint: AppTheme.Colors.success
+                )
+
+                completionRow(
+                    title: "기록 포인트",
+                    value: summary.rewardText,
+                    symbol: "sparkles",
+                    tint: AppTheme.Colors.textPrimary
+                )
+            }
+        }
+    }
+
+    private var actionButton: some View {
+        Button(action: onAction) {
+            Label(actionTitle, systemImage: "house.fill")
+                .font(.system(.headline, design: .rounded, weight: .semibold))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 18)
+                .background(AppTheme.Colors.accent)
+                .foregroundStyle(Color.white)
+                .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        }
+    }
+
+    private func completionRow(title: String, value: String, symbol: String, tint: Color) -> some View {
+        HStack(spacing: AppTheme.Spacing.medium) {
+            Image(systemName: symbol)
+                .font(.system(.headline, design: .rounded, weight: .bold))
+                .foregroundStyle(tint)
+                .frame(width: 28)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                    .foregroundStyle(AppTheme.Colors.textPrimary)
+                    .lineLimit(2)
+
+                Text(value)
+                    .font(.system(.headline, design: .rounded, weight: .bold))
+                    .foregroundStyle(AppTheme.Colors.textPrimary)
+            }
+
+            Spacer(minLength: AppTheme.Spacing.small)
+        }
     }
 }
