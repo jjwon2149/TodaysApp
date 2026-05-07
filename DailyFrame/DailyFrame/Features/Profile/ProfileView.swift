@@ -12,15 +12,21 @@ struct ProfileView: View {
                             Text("나의 기록")
                                 .font(.system(.title3, design: .rounded, weight: .bold))
 
-                            Text("지금까지 42일을 남겼습니다")
+                            Text(viewModel.totalEntriesText)
                                 .font(.system(.subheadline, design: .rounded))
                                 .foregroundStyle(AppTheme.Colors.textSecondary)
+
+                            if let profileStatsStatusMessage = viewModel.profileStatsStatusMessage {
+                                Text(profileStatsStatusMessage)
+                                    .font(.system(.footnote, design: .rounded))
+                                    .foregroundStyle(AppTheme.Colors.textSecondary)
+                            }
                         }
                     }
 
                     HStack(spacing: AppTheme.Spacing.medium) {
-                        summaryCard(title: "현재", value: "12일")
-                        summaryCard(title: "최고", value: "18일")
+                        summaryCard(title: "현재", value: viewModel.currentStreakText)
+                        summaryCard(title: "최고", value: viewModel.longestStreakText)
                     }
 
                     AppCard {
