@@ -3,6 +3,7 @@ import SwiftUI
 struct RootView: View {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @State private var selectedTab: AppTab = .home
+    @State private var didStartLaunchMediaMaintenance = false
 
     var body: some View {
         Group {
@@ -26,6 +27,18 @@ struct RootView: View {
         .background(AppTheme.Colors.background.ignoresSafeArea())
         .task {
             try? await BootstrapService().seedDefaultsIfNeeded()
+            startLaunchMediaMaintenanceIfNeeded()
+        }
+    }
+
+    private func startLaunchMediaMaintenanceIfNeeded() {
+        guard didStartLaunchMediaMaintenance == false else {
+            return
+        }
+
+        didStartLaunchMediaMaintenance = true
+        Task.detached(priority: .background) {
+            _ = await ImageStorageService().performLaunchMaintenance()
         }
     }
 

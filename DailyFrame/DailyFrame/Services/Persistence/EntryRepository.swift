@@ -19,6 +19,13 @@ struct EntryRepository {
             .sorted { $0.localDateString < $1.localDateString }
     }
 
+    func fetchActiveMediaLocalPaths() async throws -> Set<String> {
+        let entries = try await fetchAllActiveEntries()
+        return Set(entries.flatMap { entry in
+            [entry.imageLocalPath, entry.thumbnailLocalPath].compactMap { $0 }
+        })
+    }
+
     func fetchEntries(inMonthPrefix monthPrefix: String) async throws -> [DailyPhotoEntry] {
         try await store.load().entries
             .filter { $0.localDateString.hasPrefix(monthPrefix) && $0.isDeleted == false }
@@ -33,6 +40,32 @@ struct EntryRepository {
                 snapshot.entries.append(entry)
             }
         }
+    }
+
+    func setThumbnailLocalPath(
+        _ thumbnailLocalPath: String,
+        for localDateString: String,
+        matchingImageLocalPath imageLocalPath: String
+    ) async throws -> Bool {
+        var didUpdate = false
+
+        try await store.update { snapshot in
+            guard let index = snapshot.entries.firstIndex(where: { $0.localDateString == localDateString }) else {
+                return
+            }
+
+            guard snapshot.entries[index].isDeleted == false,
+                  snapshot.entries[index].thumbnailLocalPath == nil,
+                  snapshot.entries[index].imageLocalPath == imageLocalPath
+            else {
+                return
+            }
+
+            snapshot.entries[index].thumbnailLocalPath = thumbnailLocalPath
+            didUpdate = true
+        }
+
+        return didUpdate
     }
 
     func softDelete(localDateString: String) async throws {
