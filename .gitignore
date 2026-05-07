@@ -3,6 +3,7 @@
 # Docs
 *.md
 !README.md
+!support.md
 
 # Xcode user data
 *.xcuserstate
