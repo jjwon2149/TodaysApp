@@ -7,20 +7,20 @@ struct OnboardingView: View {
 
     private let pages: [OnboardingPage] = [
         .init(
-            title: "하루 한 장이면 충분합니다",
-            message: "길게 쓰지 않아도 됩니다. 오늘을 대표하는 사진 한 장으로 기록을 시작합니다.",
+            title: L10n.string("onboarding.page1.title"),
+            message: L10n.string("onboarding.page1.message"),
             symbol: "camera.aperture",
             accent: AppTheme.Colors.accent
         ),
         .init(
-            title: "스트릭으로 기록이 이어집니다",
-            message: "부담 없는 미션과 연속 기록으로 매일 다시 돌아오게 만드는 구조를 만듭니다.",
+            title: L10n.string("onboarding.page2.title"),
+            message: L10n.string("onboarding.page2.message"),
             symbol: "flame.fill",
             accent: AppTheme.Colors.success
         ),
         .init(
-            title: "나만의 조용한 아카이브를 쌓습니다",
-            message: "공개 피드보다 개인 기록이 먼저입니다. 사진은 달력과 타임라인에 차곡차곡 쌓입니다.",
+            title: L10n.string("onboarding.page3.title"),
+            message: L10n.string("onboarding.page3.message"),
             symbol: "square.stack.3d.up.fill",
             accent: AppTheme.Colors.textPrimary
         )
@@ -64,7 +64,7 @@ struct OnboardingView: View {
 
             VStack(spacing: AppTheme.Spacing.small) {
                 Button(action: primaryAction) {
-                    Text(selectedPage == pages.count - 1 ? "시작하기" : "다음")
+                    Text(selectedPage == pages.count - 1 ? L10n.string("onboarding.start") : L10n.string("onboarding.next"))
                         .font(.system(.headline, design: .rounded, weight: .semibold))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 18)
@@ -73,7 +73,7 @@ struct OnboardingView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
                 }
 
-                Button("나중에 둘러볼게요", action: onStart)
+                Button(L10n.string("onboarding.skip"), action: onStart)
                     .font(.system(.subheadline, design: .rounded, weight: .medium))
                     .foregroundStyle(AppTheme.Colors.textSecondary)
             }

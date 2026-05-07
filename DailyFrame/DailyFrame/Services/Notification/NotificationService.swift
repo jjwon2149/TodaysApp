@@ -30,8 +30,8 @@ struct NotificationService {
         cancelDailyReminder()
 
         let content = UNMutableNotificationContent()
-        content.title = "오늘의 한 장을 남길 시간"
-        content.body = "사진 한 장으로 오늘을 조용히 저장해보세요."
+        content.title = L10n.string("notification.daily.title")
+        content.body = L10n.string("notification.daily.body")
         content.sound = .default
 
         var dateComponents = DateComponents()

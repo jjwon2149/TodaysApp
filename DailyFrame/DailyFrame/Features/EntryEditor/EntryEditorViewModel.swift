@@ -12,10 +12,10 @@ final class EntryEditorViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published private(set) var completionSummary: EntryCompletionSummary?
 
-    let moodOptions = ["좋음", "평온", "피곤", "설렘", "복잡", "그저 그럼"]
+    let moodOptions = MoodLocalization.options
 
     var saveButtonTitle: String {
-        existingEntry == nil ? "오늘의 한 장으로 저장" : "변경사항 저장"
+        existingEntry == nil ? L10n.string("editor.save.new") : L10n.string("editor.save.edit")
     }
 
     private let existingEntry: DailyPhotoEntry?
@@ -56,7 +56,7 @@ final class EntryEditorViewModel: ObservableObject {
         do {
             guard let data = try await item.loadTransferable(type: Data.self),
                   let image = UIImage(data: data) else {
-                errorMessage = "선택한 사진을 불러오지 못했습니다."
+                errorMessage = L10n.string("error.photo.load")
                 return
             }
 
@@ -64,13 +64,13 @@ final class EntryEditorViewModel: ObservableObject {
             imageData = image.jpegData(compressionQuality: 0.86) ?? data
             imageSourceType = "library"
         } catch {
-            errorMessage = "사진을 가져오는 중 오류가 발생했습니다."
+            errorMessage = L10n.string("error.photo.import")
         }
     }
 
     func loadCapturedImage(_ image: UIImage) {
         guard let data = image.jpegData(compressionQuality: 0.86) else {
-            errorMessage = "촬영한 사진을 처리하지 못했습니다. 다시 촬영하거나 앨범에서 선택해주세요."
+            errorMessage = L10n.string("error.camera.process")
             return
         }
 
@@ -125,7 +125,7 @@ final class EntryEditorViewModel: ObservableObject {
                     }
                 }
             } else {
-                errorMessage = "저장하려면 먼저 사진을 선택해주세요."
+                errorMessage = L10n.string("error.save.no_photo")
                 return false
             }
 
@@ -167,7 +167,7 @@ final class EntryEditorViewModel: ObservableObject {
                     currentStreak: max(streakState.currentStreak, 1),
                     missionTitle: completedMission.title,
                     missionCompleted: completedMission.isCompleted,
-                    rewardText: "+20 XP",
+                    rewardText: L10n.string("editor.completion.reward_xp"),
                     returnMessage: Self.returnMessage(for: max(streakState.currentStreak, 1))
                 )
             } catch {
@@ -189,7 +189,7 @@ final class EntryEditorViewModel: ObservableObject {
 
             return true
         } catch {
-            errorMessage = "기록을 저장하는 중 오류가 발생했습니다."
+            errorMessage = L10n.string("error.save.entry")
             return false
         }
     }
@@ -237,10 +237,10 @@ final class EntryEditorViewModel: ObservableObject {
 
     private static func returnMessage(for currentStreak: Int) -> String {
         if currentStreak <= 1 {
-            return "내일 다시 한 장을 남기면 2일 스트릭이 시작됩니다."
+            return L10n.string("editor.completion.return_first")
         }
 
-        return "내일 한 장을 더 남기면 \(currentStreak + 1)일 스트릭으로 이어집니다."
+        return L10n.format("editor.completion.return_next", currentStreak + 1)
     }
 }
 

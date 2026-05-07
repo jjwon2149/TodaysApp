@@ -10,7 +10,7 @@ final class ProfileViewModel: ObservableObject {
     @Published private(set) var profileStatsStatusMessage: String?
     @Published private(set) var reminderEnabled = false
     @Published private(set) var reminderTime: Date
-    @Published private(set) var notificationStatusMessage = "알림 상태를 확인하는 중입니다."
+    @Published private(set) var notificationStatusMessage = L10n.string("profile.notification.status.loading")
     @Published private(set) var errorMessage: String?
     @Published private(set) var isUpdatingReminder = false
 
@@ -40,15 +40,15 @@ final class ProfileViewModel: ObservableObject {
     }
 
     var totalEntriesText: String {
-        "지금까지 \(totalEntryCount)일을 남겼습니다"
+        L10n.format("profile.total_entries", totalEntryCount)
     }
 
     var currentStreakText: String {
-        "\(currentStreak)일"
+        L10n.format("common.days_count", currentStreak)
     }
 
     var longestStreakText: String {
-        "\(longestStreak)일"
+        L10n.format("common.days_count", longestStreak)
     }
 
     func load() async {
@@ -59,7 +59,7 @@ final class ProfileViewModel: ObservableObject {
             syncPublishedState(from: appSettings)
             await refreshNotificationStatusMessage()
         } catch {
-            notificationStatusMessage = "알림 설정을 불러오지 못했습니다."
+            notificationStatusMessage = L10n.string("error.notification.settings_load")
         }
     }
 
@@ -85,7 +85,7 @@ final class ProfileViewModel: ObservableObject {
             didFail = true
         }
 
-        profileStatsStatusMessage = didFail ? "기록 통계를 불러오지 못했습니다." : nil
+        profileStatsStatusMessage = didFail ? L10n.string("error.profile.stats_load") : nil
     }
 
     func setReminderEnabled(_ isEnabled: Bool) async {
@@ -144,7 +144,7 @@ final class ProfileViewModel: ObservableObject {
                 permissionPrompted: appSettings.notificationsPermissionPrompted
             )
         } catch {
-            errorMessage = "알림 시간을 저장하지 못했습니다."
+            errorMessage = L10n.string("error.notification.time_save")
             syncPublishedState(from: appSettings)
         }
 
@@ -187,7 +187,7 @@ final class ProfileViewModel: ObservableObject {
                 minute: components.minute,
                 permissionPrompted: true
             )
-            errorMessage = "알림을 켜지 못했습니다."
+            errorMessage = L10n.string("error.notification.enable")
         }
     }
 
@@ -203,7 +203,7 @@ final class ProfileViewModel: ObservableObject {
                 permissionPrompted: appSettings.notificationsPermissionPrompted
             )
         } catch {
-            errorMessage = "알림 설정을 저장하지 못했습니다."
+            errorMessage = L10n.string("error.notification.settings_save")
             syncPublishedState(from: appSettings)
         }
     }
@@ -229,14 +229,14 @@ final class ProfileViewModel: ObservableObject {
         switch status {
         case .authorized, .provisional, .ephemeral:
             notificationStatusMessage = reminderEnabled
-                ? "매일 \(formattedReminderTime)에 알려드립니다."
-                : "알림 권한이 허용되어 있습니다."
+                ? L10n.format("profile.notification.status.scheduled", formattedReminderTime)
+                : L10n.string("profile.notification.status.authorized")
         case .denied:
-            notificationStatusMessage = "iOS 설정에서 DailyFrame 알림이 꺼져 있습니다."
+            notificationStatusMessage = L10n.string("profile.notification.status.denied")
         case .notDetermined:
-            notificationStatusMessage = "알림을 켜면 권한 요청이 표시됩니다."
+            notificationStatusMessage = L10n.string("profile.notification.status.not_determined")
         @unknown default:
-            notificationStatusMessage = "현재 알림 상태를 확인할 수 없습니다."
+            notificationStatusMessage = L10n.string("profile.notification.status.unknown")
         }
     }
 
@@ -255,7 +255,7 @@ final class ProfileViewModel: ObservableObject {
     }
 
     private var permissionDeniedMessage: String {
-        "알림 권한이 꺼져 있어요. iOS 설정에서 허용하면 다시 켤 수 있습니다."
+        L10n.string("profile.notification.permission_denied")
     }
 
     private func reminderComponents(from date: Date) -> (hour: Int, minute: Int) {

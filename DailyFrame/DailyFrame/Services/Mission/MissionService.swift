@@ -35,9 +35,9 @@ struct MissionService {
             id: "\(localDateString)-\(template.id)",
             localDateString: localDateString,
             templateID: template.id,
-            title: template.title,
-            prompt: template.prompt,
-            category: template.category,
+            title: L10n.string(template.titleKey),
+            prompt: L10n.string(template.promptKey),
+            category: L10n.string(template.categoryKey),
             symbolName: template.symbolName
         )
     }
@@ -52,46 +52,46 @@ struct MissionService {
 
 private struct MissionTemplate {
     let id: String
-    let title: String
-    let prompt: String
-    let category: String
+    let titleKey: String
+    let promptKey: String
+    let categoryKey: String
     let symbolName: String
 }
 
 private let missionTemplates: [MissionTemplate] = [
     .init(
         id: "today-scene",
-        title: "오늘을 대표하는 장면",
-        prompt: "지금 하루를 가장 잘 보여주는 장면을 한 장 남겨보세요.",
-        category: "기록",
+        titleKey: "mission.today_scene.title",
+        promptKey: "mission.today_scene.prompt",
+        categoryKey: "mission.category.record",
         symbolName: "camera.aperture"
     ),
     .init(
         id: "favorite-color",
-        title: "오늘의 색",
-        prompt: "오늘 유난히 눈에 들어온 색이 담긴 장면을 찾아보세요.",
-        category: "관찰",
+        titleKey: "mission.favorite_color.title",
+        promptKey: "mission.favorite_color.prompt",
+        categoryKey: "mission.category.observation",
         symbolName: "paintpalette.fill"
     ),
     .init(
         id: "place-stayed",
-        title: "오래 머문 곳",
-        prompt: "오늘 가장 오래 머문 공간의 분위기를 사진으로 저장해보세요.",
-        category: "장소",
+        titleKey: "mission.place_stayed.title",
+        promptKey: "mission.place_stayed.prompt",
+        categoryKey: "mission.category.place",
         symbolName: "mappin.and.ellipse"
     ),
     .init(
         id: "small-routine",
-        title: "작은 루틴",
-        prompt: "오늘 반복한 작은 습관이나 손이 간 물건을 찍어보세요.",
-        category: "습관",
+        titleKey: "mission.small_routine.title",
+        promptKey: "mission.small_routine.prompt",
+        categoryKey: "mission.category.habit",
         symbolName: "repeat.circle.fill"
     ),
     .init(
         id: "quiet-moment",
-        title: "조용했던 순간",
-        prompt: "잠깐 멈췄던 순간을 한 장으로 남겨보세요.",
-        category: "감각",
+        titleKey: "mission.quiet_moment.title",
+        promptKey: "mission.quiet_moment.prompt",
+        categoryKey: "mission.category.sense",
         symbolName: "moon.stars.fill"
     )
 ]

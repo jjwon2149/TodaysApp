@@ -9,9 +9,9 @@ enum CameraCaptureError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .cameraUnavailable:
-            return "이 기기에서는 카메라를 사용할 수 없습니다. 앨범에서 사진을 선택해주세요."
+            return L10n.string("error.camera.unavailable")
         case .missingCapturedImage:
-            return "촬영한 사진을 불러오지 못했습니다. 다시 촬영하거나 앨범에서 선택해주세요."
+            return L10n.string("error.camera.missing_image")
         }
     }
 }
@@ -109,12 +109,12 @@ extension CameraCaptureView {
 
         private func showPermissionDeniedAlert() {
             let alert = UIAlertController(
-                title: "카메라 권한 필요",
-                message: "사진을 촬영하려면 설정에서 카메라 접근을 허용해 주세요.",
+                title: L10n.string("camera.permission.title"),
+                message: L10n.string("camera.permission.message"),
                 preferredStyle: .alert
             )
 
-            alert.addAction(UIAlertAction(title: "설정으로 이동", style: .default) { [weak self] _ in
+            alert.addAction(UIAlertAction(title: L10n.string("common.open_settings"), style: .default) { [weak self] _ in
                 guard let self else { return }
 
                 if let settingsURL = URL(string: UIApplication.openSettingsURLString) {
@@ -124,7 +124,7 @@ extension CameraCaptureView {
                 self.captureView.onCancel()
             })
 
-            alert.addAction(UIAlertAction(title: "취소", style: .cancel) { [weak self] _ in
+            alert.addAction(UIAlertAction(title: L10n.string("common.cancel"), style: .cancel) { [weak self] _ in
                 self?.captureView.onCancel()
             })
 

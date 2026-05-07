@@ -9,7 +9,7 @@ struct ProfileView: View {
                 VStack(alignment: .leading, spacing: AppTheme.Spacing.large) {
                     AppCard {
                         VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
-                            Text("나의 기록")
+                            Text("profile.header.title")
                                 .font(.system(.title3, design: .rounded, weight: .bold))
 
                             Text(viewModel.totalEntriesText)
@@ -25,8 +25,8 @@ struct ProfileView: View {
                     }
 
                     HStack(spacing: AppTheme.Spacing.medium) {
-                        summaryCard(title: "현재", value: viewModel.currentStreakText)
-                        summaryCard(title: "최고", value: viewModel.longestStreakText)
+                        summaryCard(title: L10n.string("profile.streak.current"), value: viewModel.currentStreakText)
+                        summaryCard(title: L10n.string("profile.streak.best"), value: viewModel.longestStreakText)
                     }
 
                     notificationSettingsSection
@@ -34,7 +34,7 @@ struct ProfileView: View {
                 .padding(AppTheme.Spacing.medium)
             }
             .background(AppTheme.Colors.background)
-            .navigationTitle("보관함")
+            .navigationTitle(L10n.string("tab.profile"))
             .task {
                 await viewModel.load()
             }
@@ -63,13 +63,13 @@ struct ProfileView: View {
                         .foregroundStyle(AppTheme.Colors.accent)
                         .frame(width: 28)
 
-                    Text("매일 기록 알림")
+                    Text("profile.notification.title")
                         .font(.system(.body, design: .rounded, weight: .medium))
 
                     Spacer()
 
                     Toggle(
-                        "매일 기록 알림",
+                        L10n.string("profile.notification.title"),
                         isOn: Binding(
                             get: { viewModel.reminderEnabled },
                             set: { isEnabled in
@@ -86,7 +86,7 @@ struct ProfileView: View {
                 Divider()
 
                 DatePicker(
-                    "알림 시간",
+                    L10n.string("profile.notification.time"),
                     selection: Binding(
                         get: { viewModel.reminderTime },
                         set: { newValue in

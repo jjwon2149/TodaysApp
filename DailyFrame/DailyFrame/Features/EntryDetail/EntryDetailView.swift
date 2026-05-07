@@ -31,41 +31,41 @@ struct EntryDetailView: View {
             .padding(AppTheme.Spacing.medium)
         }
         .background(AppTheme.Colors.background)
-        .navigationTitle("기록 상세")
+        .navigationTitle(L10n.string("entry.detail.title"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button("수정") {
+                Button(L10n.string("common.edit")) {
                     isPresentingEditor = true
                 }
                 .font(.system(.body, design: .rounded, weight: .semibold))
             }
         }
         .sheet(isPresented: $isPresentingEditor) {
-            EntryEditorView(existingEntry: entry, completionActionTitle: "기록으로 돌아가기") {
+            EntryEditorView(existingEntry: entry, completionActionTitle: L10n.string("entry.detail.return_action")) {
                 await reloadEntry()
                 await onChanged()
             }
         }
-        .confirmationDialog("기록을 삭제할까요?", isPresented: $isConfirmingDelete, titleVisibility: .visible) {
-            Button("기록 삭제", role: .destructive) {
+        .confirmationDialog(L10n.string("entry.delete.confirm_title"), isPresented: $isConfirmingDelete, titleVisibility: .visible) {
+            Button(L10n.string("entry.delete.action"), role: .destructive) {
                 Task {
                     await deleteEntry()
                 }
             }
 
-            Button("취소", role: .cancel) {}
+            Button(L10n.string("common.cancel"), role: .cancel) {}
         } message: {
-            Text("삭제한 기록은 캘린더에서 숨겨지고, 스트릭은 남은 기록 기준으로 다시 계산됩니다.")
+            Text("entry.delete.confirm_message")
         }
-        .alert("삭제할 수 없습니다", isPresented: Binding(get: {
+        .alert(L10n.string("entry.delete.error_title"), isPresented: Binding(get: {
             errorMessage != nil
         }, set: { newValue in
             if newValue == false {
                 errorMessage = nil
             }
         })) {
-            Button("확인", role: .cancel) {}
+            Button(L10n.string("common.ok"), role: .cancel) {}
         } message: {
             Text(errorMessage ?? "")
         }
@@ -91,7 +91,7 @@ struct EntryDetailView: View {
                         .font(.system(.body, design: .rounded))
                         .foregroundStyle(AppTheme.Colors.textPrimary)
                 } else {
-                    Text("메모 없이 사진만 기록했습니다.")
+                    Text("entry.memo.empty")
                         .font(.system(.body, design: .rounded))
                         .foregroundStyle(AppTheme.Colors.textSecondary)
                 }
@@ -102,9 +102,9 @@ struct EntryDetailView: View {
     private var metadataSection: some View {
         AppCard {
             VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
-                detailRow(title: "기분", value: entry.moodCode ?? "기록 없음", symbol: "face.smiling")
-                detailRow(title: "미션", value: entry.missionCompleted ? "완료" : "미완료", symbol: "sparkles")
-                detailRow(title: "기록 방식", value: sourceLabel, symbol: "photo.on.rectangle")
+                detailRow(title: L10n.string("entry.detail.mood"), value: MoodLocalization.displayName(for: entry.moodCode), symbol: "face.smiling")
+                detailRow(title: L10n.string("entry.detail.mission"), value: entry.missionCompleted ? L10n.string("common.complete") : L10n.string("common.incomplete"), symbol: "sparkles")
+                detailRow(title: L10n.string("entry.detail.source"), value: sourceLabel, symbol: "photo.on.rectangle")
             }
         }
     }
@@ -112,18 +112,18 @@ struct EntryDetailView: View {
     private var policySection: some View {
         AppCard {
             VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
-                Text("기록 관리")
+                Text("entry.manage.title")
                     .font(.system(.headline, design: .rounded, weight: .semibold))
                     .foregroundStyle(AppTheme.Colors.textPrimary)
 
-                Text("수정 시 날짜는 유지됩니다. 삭제하면 기록은 숨김 처리되고 스트릭은 활성 기록 기준으로 다시 계산됩니다.")
+                Text("entry.manage.subtitle")
                     .font(.system(.subheadline, design: .rounded))
                     .foregroundStyle(AppTheme.Colors.textSecondary)
 
                 Button(role: .destructive) {
                     isConfirmingDelete = true
                 } label: {
-                    Text(isDeleting ? "삭제 중..." : "기록 삭제")
+                    Text(isDeleting ? L10n.string("entry.delete.deleting") : L10n.string("entry.delete.action"))
                         .font(.system(.headline, design: .rounded, weight: .semibold))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
@@ -139,9 +139,9 @@ struct EntryDetailView: View {
     private var sourceLabel: String {
         switch entry.sourceType {
         case "library":
-            return "앨범"
+            return L10n.string("entry.source.library")
         case "camera":
-            return "카메라"
+            return L10n.string("entry.source.camera")
         default:
             return entry.sourceType
         }
@@ -194,7 +194,7 @@ struct EntryDetailView: View {
             await onChanged()
             dismiss()
         } catch {
-            errorMessage = "기록을 삭제하는 중 오류가 발생했습니다."
+            errorMessage = L10n.string("error.entry.delete")
         }
     }
 }
@@ -216,7 +216,7 @@ private struct EntryDetailImageView: View {
                             .font(.system(size: 34, weight: .semibold))
                             .foregroundStyle(AppTheme.Colors.textSecondary)
 
-                        Text("사진을 불러오지 못했습니다")
+                        Text("entry.image.load_failed")
                             .font(.system(.headline, design: .rounded, weight: .semibold))
                             .foregroundStyle(AppTheme.Colors.textPrimary)
                     }

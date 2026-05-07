@@ -5,7 +5,15 @@ struct CalendarView: View {
     @StateObject private var viewModel = CalendarViewModel()
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 10), count: 7)
-    private let weekdaySymbols = ["일", "월", "화", "수", "목", "금", "토"]
+    private let weekdaySymbols = [
+        L10n.string("calendar.weekday.sun"),
+        L10n.string("calendar.weekday.mon"),
+        L10n.string("calendar.weekday.tue"),
+        L10n.string("calendar.weekday.wed"),
+        L10n.string("calendar.weekday.thu"),
+        L10n.string("calendar.weekday.fri"),
+        L10n.string("calendar.weekday.sat")
+    ]
 
     var body: some View {
         NavigationStack {
@@ -49,11 +57,11 @@ struct CalendarView: View {
 
                     AppCard {
                         VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
-                            Text("기록한 날은 사진 썸네일로 표시됩니다.")
+                            Text("calendar.legend.title")
                                 .font(.system(.body, design: .rounded))
                                 .foregroundStyle(AppTheme.Colors.textPrimary)
 
-                            Text(viewModel.errorMessage ?? "이미지를 불러오지 못하는 기록은 완료 표시로 대신 보여줍니다. 기록 상세 연결은 다음 단계에서 붙입니다.")
+                            Text(viewModel.errorMessage ?? L10n.string("calendar.legend.subtitle"))
                                 .font(.system(.subheadline, design: .rounded))
                                 .foregroundStyle(AppTheme.Colors.textSecondary)
                         }
@@ -62,7 +70,7 @@ struct CalendarView: View {
                 .padding(AppTheme.Spacing.medium)
             }
             .background(AppTheme.Colors.background)
-            .navigationTitle("캘린더")
+            .navigationTitle(L10n.string("tab.calendar"))
             .task {
                 await viewModel.loadMonth()
             }
@@ -181,8 +189,8 @@ private struct CalendarDayCell: View {
     }
 
     private func accessibilityLabel(dayNumber: Int) -> String {
-        let status = cell.hasEntry ? "기록 있음" : "기록 없음"
-        return "\(dayNumber)일, \(status)"
+        let status = cell.hasEntry ? L10n.string("calendar.accessibility.has_entry") : L10n.string("calendar.accessibility.no_entry")
+        return L10n.format("calendar.accessibility.day_status", dayNumber, status)
     }
 }
 

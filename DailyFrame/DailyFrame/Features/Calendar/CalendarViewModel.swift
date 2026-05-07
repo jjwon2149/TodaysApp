@@ -39,7 +39,7 @@ final class CalendarViewModel: ObservableObject {
     }
 
     var monthSummary: String {
-        "\(monthTitle) \(dayCount)일 중 \(entryCount)일 기록"
+        L10n.format("calendar.month.summary", monthTitle, dayCount, entryCount)
     }
 
     func loadMonth() async {
@@ -51,7 +51,7 @@ final class CalendarViewModel: ObservableObject {
         } catch {
             entryCount = 0
             rebuildDayCells(entries: [])
-            errorMessage = "캘린더 기록을 불러오지 못했습니다."
+            errorMessage = L10n.string("error.calendar.load")
         }
     }
 

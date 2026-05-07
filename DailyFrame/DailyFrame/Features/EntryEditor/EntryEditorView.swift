@@ -16,7 +16,7 @@ struct EntryEditorView: View {
 
     init(
         existingEntry: DailyPhotoEntry?,
-        completionActionTitle: String = "홈으로 돌아가기",
+        completionActionTitle: String = L10n.string("editor.completion.home_action"),
         onSaved: @escaping () async -> Void
     ) {
         self.existingEntry = existingEntry
@@ -54,14 +54,14 @@ struct EntryEditorView: View {
                     isPresentingCamera = false
                 }
             }
-            .alert("저장할 수 없습니다", isPresented: Binding(get: {
+            .alert(L10n.string("editor.error.alert_title"), isPresented: Binding(get: {
                 viewModel.errorMessage != nil
             }, set: { newValue in
                 if newValue == false {
                     viewModel.errorMessage = nil
                 }
             })) {
-                Button("확인", role: .cancel) {}
+                Button(L10n.string("common.ok"), role: .cancel) {}
             } message: {
                 Text(viewModel.errorMessage ?? "")
             }
@@ -82,7 +82,7 @@ struct EntryEditorView: View {
         .background(KeyboardDismissTapHandler())
         .scrollDismissesKeyboard(.immediately)
         .background(AppTheme.Colors.background)
-        .navigationTitle(existingEntry == nil ? "오늘 기록" : "기록 수정")
+        .navigationTitle(existingEntry == nil ? L10n.string("editor.title.new") : L10n.string("editor.title.edit"))
         .navigationBarTitleDisplayMode(.inline)
         .task(id: selectedPhotoItem) {
             await viewModel.loadPhotoItem(selectedPhotoItem)
@@ -109,7 +109,7 @@ struct EntryEditorView: View {
                                     .font(.system(size: 32, weight: .semibold))
                                     .foregroundStyle(AppTheme.Colors.textSecondary)
 
-                                Text("오늘의 한 장을 골라주세요")
+                                Text("editor.photo.empty")
                                     .font(.system(.headline, design: .rounded, weight: .semibold))
                             }
                         }
@@ -130,7 +130,7 @@ struct EntryEditorView: View {
                     .disabled(isCameraAvailable == false)
 
                     PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
-                        Label(existingEntry == nil ? "앨범에서 사진 선택" : "앨범에서 다시 선택", systemImage: "photo.stack")
+                        Label(existingEntry == nil ? L10n.string("editor.photo.pick") : L10n.string("editor.photo.repick"), systemImage: "photo.stack")
                             .font(.system(.headline, design: .rounded, weight: .semibold))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 18)
@@ -141,7 +141,7 @@ struct EntryEditorView: View {
                 }
 
                 if isCameraAvailable == false {
-                    Text("이 기기에서는 카메라를 사용할 수 없습니다. 앨범에서 사진을 선택해주세요.")
+                    Text("error.camera.unavailable")
                         .font(.system(.footnote, design: .rounded))
                         .foregroundStyle(AppTheme.Colors.textSecondary)
                 }
@@ -155,19 +155,19 @@ struct EntryEditorView: View {
 
     private var cameraButtonTitle: String {
         if isCameraAvailable == false {
-            return "카메라 사용 불가"
+            return L10n.string("editor.camera.unavailable")
         }
 
-        return existingEntry == nil ? "카메라로 촬영" : "카메라로 다시 촬영"
+        return existingEntry == nil ? L10n.string("editor.camera.capture") : L10n.string("editor.camera.recapture")
     }
 
     private var memoSection: some View {
         AppCard {
             VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
-                Text("오늘의 한 줄")
+                Text("editor.memo.title")
                     .font(.system(.headline, design: .rounded, weight: .semibold))
 
-                TextField("이 사진을 고른 이유를 남겨보세요", text: $viewModel.memo, axis: .vertical)
+                TextField(L10n.string("editor.memo.placeholder"), text: $viewModel.memo, axis: .vertical)
                     .textFieldStyle(.plain)
                     .padding(AppTheme.Spacing.medium)
                     .background(AppTheme.Colors.muted)
@@ -179,20 +179,20 @@ struct EntryEditorView: View {
     private var moodSection: some View {
         AppCard {
             VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
-                Text("오늘 기분")
+                Text("editor.mood.title")
                     .font(.system(.headline, design: .rounded, weight: .semibold))
 
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 2), spacing: 10) {
-                    ForEach(viewModel.moodOptions, id: \.self) { mood in
+                    ForEach(viewModel.moodOptions) { mood in
                         Button {
-                            viewModel.selectedMood = mood
+                            viewModel.selectedMood = mood.id
                         } label: {
-                            Text(mood)
+                            Text(mood.title)
                                 .font(.system(.subheadline, design: .rounded, weight: .semibold))
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 16)
-                                .background(viewModel.selectedMood == mood ? AppTheme.Colors.accent : AppTheme.Colors.muted)
-                                .foregroundStyle(viewModel.selectedMood == mood ? Color.white : AppTheme.Colors.textPrimary)
+                                .background(viewModel.selectedMood == mood.id ? AppTheme.Colors.accent : AppTheme.Colors.muted)
+                                .foregroundStyle(viewModel.selectedMood == mood.id ? Color.white : AppTheme.Colors.textPrimary)
                                 .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
                         }
                     }
@@ -215,7 +215,7 @@ struct EntryEditorView: View {
                         .tint(.white)
                 }
 
-                Text(viewModel.isSaving ? "저장 중..." : viewModel.saveButtonTitle)
+                Text(viewModel.isSaving ? L10n.string("editor.saving") : viewModel.saveButtonTitle)
                     .font(.system(.headline, design: .rounded, weight: .semibold))
             }
             .frame(maxWidth: .infinity)
@@ -331,7 +331,7 @@ private struct EntryCompletionView: View {
             .padding(AppTheme.Spacing.medium)
         }
         .background(AppTheme.Colors.background)
-        .navigationTitle("완료")
+        .navigationTitle(L10n.string("editor.completion.title"))
         .navigationBarTitleDisplayMode(.inline)
     }
 
@@ -342,7 +342,7 @@ private struct EntryCompletionView: View {
                 .foregroundStyle(AppTheme.Colors.success)
 
             VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
-                Text("기록 완료")
+                Text("editor.completion.header")
                     .font(.system(.largeTitle, design: .rounded, weight: .bold))
                     .foregroundStyle(AppTheme.Colors.textPrimary)
 
@@ -359,26 +359,26 @@ private struct EntryCompletionView: View {
     private var rewardSection: some View {
         AppCard {
             VStack(alignment: .leading, spacing: AppTheme.Spacing.large) {
-                Text("오늘 보상")
+                Text("editor.completion.reward_title")
                     .font(.system(.headline, design: .rounded, weight: .semibold))
                     .foregroundStyle(AppTheme.Colors.textPrimary)
 
                 completionRow(
-                    title: "현재 스트릭",
-                    value: "\(summary.currentStreak)일",
+                    title: L10n.string("editor.completion.current_streak"),
+                    value: L10n.format("common.days_count", summary.currentStreak),
                     symbol: "flame.fill",
                     tint: AppTheme.Colors.accent
                 )
 
                 completionRow(
                     title: summary.missionTitle,
-                    value: summary.missionCompleted ? "미션 완료" : "확인 필요",
+                    value: summary.missionCompleted ? L10n.string("editor.completion.mission_complete") : L10n.string("editor.completion.needs_review"),
                     symbol: "checkmark.seal.fill",
                     tint: AppTheme.Colors.success
                 )
 
                 completionRow(
-                    title: "기록 포인트",
+                    title: L10n.string("editor.completion.reward_points"),
                     value: summary.rewardText,
                     symbol: "sparkles",
                     tint: AppTheme.Colors.textPrimary

@@ -36,11 +36,11 @@ struct HomeView: View {
 
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("오늘도 한 장 남겨볼까요?")
+            Text("home.header.title")
                 .font(.system(.title, design: .rounded, weight: .bold))
                 .foregroundStyle(AppTheme.Colors.textPrimary)
 
-            Text(viewModel.currentStreak > 0 ? "현재 \(viewModel.currentStreak)일 연속 기록 중입니다" : "오늘 한 장으로 기록을 시작해보세요")
+            Text(viewModel.headerSubtitle)
                 .font(.system(.subheadline, design: .rounded))
                 .foregroundStyle(AppTheme.Colors.textSecondary)
         }
@@ -58,10 +58,10 @@ struct HomeView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
 
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("\(viewModel.currentStreak)일 스트릭")
+                    Text(viewModel.currentStreakTitle)
                         .font(.system(.title3, design: .rounded, weight: .bold))
 
-                    Text("최고 \(viewModel.longestStreak)일 · Freeze \(viewModel.freezeCount)개 보유")
+                    Text(viewModel.streakSummaryText)
                         .font(.system(.subheadline, design: .rounded))
                         .foregroundStyle(AppTheme.Colors.textSecondary)
                 }
@@ -82,7 +82,7 @@ struct HomeView: View {
                     Spacer()
 
                     if viewModel.isTodayMissionCompleted {
-                        Label("완료", systemImage: "checkmark.circle.fill")
+                        Label("common.complete", systemImage: "checkmark.circle.fill")
                             .font(.system(.caption, design: .rounded, weight: .bold))
                             .foregroundStyle(AppTheme.Colors.success)
                     }
@@ -97,12 +97,12 @@ struct HomeView: View {
                     .foregroundStyle(AppTheme.Colors.textSecondary)
 
                 if viewModel.isTodayMissionCompleted {
-                    Text("오늘의 한 장으로 미션을 완료했습니다.")
+                    Text("home.mission.completed")
                         .font(.system(.subheadline, design: .rounded, weight: .medium))
                         .foregroundStyle(AppTheme.Colors.success)
                 } else {
                     Button(action: { isPresentingEditor = true }) {
-                        Label("미션으로 기록하기", systemImage: "camera.fill")
+                        Label("home.mission.record_button", systemImage: "camera.fill")
                             .font(.system(.headline, design: .rounded, weight: .semibold))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
@@ -120,7 +120,7 @@ struct HomeView: View {
         if let entry = viewModel.todayEntry {
             AppCard {
                 VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
-                    Text("오늘 기록 완료")
+                    Text("home.entry.complete")
                         .font(.system(.headline, design: .rounded, weight: .semibold))
 
                     EntryImageView(imagePath: entry.imageLocalPath)
@@ -132,13 +132,13 @@ struct HomeView: View {
                             .font(.system(.body, design: .rounded))
                             .foregroundStyle(AppTheme.Colors.textPrimary)
                     } else {
-                        Text("메모 없이 사진만 기록했습니다.")
+                        Text("entry.memo.empty")
                             .font(.system(.subheadline, design: .rounded))
                             .foregroundStyle(AppTheme.Colors.textSecondary)
                     }
 
                     Button(action: { isPresentingEditor = true }) {
-                        Text("오늘 기록 수정하기")
+                        Text("home.entry.edit_button")
                             .font(.system(.headline, design: .rounded, weight: .semibold))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 18)
@@ -160,17 +160,17 @@ struct HomeView: View {
                                     .font(.system(size: 36, weight: .semibold))
                                     .foregroundStyle(AppTheme.Colors.textSecondary)
 
-                                Text("아직 오늘의 한 장이 없습니다")
+                                Text("home.empty.title")
                                     .font(.system(.headline, design: .rounded, weight: .semibold))
 
-                                Text("앨범에서 사진을 고르고 메모를 남겨보세요.")
+                                Text("home.empty.subtitle")
                                     .font(.system(.subheadline, design: .rounded))
                                     .foregroundStyle(AppTheme.Colors.textSecondary)
                             }
                         }
 
                     Button(action: { isPresentingEditor = true }) {
-                        Label("오늘 사진 남기기", systemImage: "photo.fill.on.rectangle.fill")
+                        Label("home.empty.button", systemImage: "photo.fill.on.rectangle.fill")
                             .font(.system(.headline, design: .rounded, weight: .semibold))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 18)
@@ -186,7 +186,7 @@ struct HomeView: View {
     private var progressSection: some View {
         AppCard {
             VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
-                Text("이번 달 진행률")
+                Text("home.progress.title")
                     .font(.system(.headline, design: .rounded, weight: .semibold))
 
                 Text(viewModel.monthProgressText)
@@ -201,12 +201,12 @@ struct HomeView: View {
 
     private var recentSection: some View {
         VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
-            Text("최근 기록")
+            Text("home.recent.title")
                 .font(.system(.headline, design: .rounded, weight: .semibold))
 
             if viewModel.recentEntries.isEmpty {
                 AppCard {
-                    Text("아직 최근 기록이 없습니다. 오늘 첫 장을 남겨보세요.")
+                    Text("home.recent.empty")
                         .font(.system(.subheadline, design: .rounded))
                         .foregroundStyle(AppTheme.Colors.textSecondary)
                 }

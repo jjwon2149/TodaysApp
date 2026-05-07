@@ -27,19 +27,33 @@ final class HomeViewModel: ObservableObject {
     }
 
     var monthProgressText: String {
-        "이번 달 \(currentMonthDayCount)일 중 \(monthEntryCount)일 기록"
+        L10n.format("home.progress.summary", currentMonthDayCount, monthEntryCount)
+    }
+
+    var headerSubtitle: String {
+        currentStreak > 0
+            ? L10n.format("home.header.streak_active", currentStreak)
+            : L10n.string("home.header.streak_empty")
+    }
+
+    var currentStreakTitle: String {
+        L10n.format("home.streak.title", currentStreak)
+    }
+
+    var streakSummaryText: String {
+        L10n.format("home.streak.summary", longestStreak, freezeCount)
     }
 
     var missionTitle: String {
-        todayMission?.title ?? "오늘의 미션"
+        todayMission?.title ?? L10n.string("home.mission.default_title")
     }
 
     var missionPrompt: String {
-        todayMission?.prompt ?? "오늘을 대표하는 장면을 한 장 남겨보세요."
+        todayMission?.prompt ?? L10n.string("home.mission.default_prompt")
     }
 
     var missionCategoryText: String {
-        todayMission?.category ?? "기록"
+        todayMission?.category ?? L10n.string("mission.category.record")
     }
 
     var missionSymbolName: String {

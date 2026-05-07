@@ -10,11 +10,11 @@ enum AppTab: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .home:
-            return "오늘"
+            return L10n.string("tab.home")
         case .calendar:
-            return "캘린더"
+            return L10n.string("tab.calendar")
         case .profile:
-            return "보관함"
+            return L10n.string("tab.profile")
         }
     }
 
