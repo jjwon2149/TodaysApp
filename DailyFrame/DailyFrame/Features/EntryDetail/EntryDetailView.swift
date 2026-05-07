@@ -42,7 +42,7 @@ struct EntryDetailView: View {
             }
         }
         .sheet(isPresented: $isPresentingEditor) {
-            EntryEditorView(existingEntry: entry) {
+            EntryEditorView(existingEntry: entry, completionActionTitle: "기록으로 돌아가기") {
                 await reloadEntry()
                 await onChanged()
             }

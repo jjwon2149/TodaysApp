@@ -10,6 +10,7 @@ final class EntryEditorViewModel: ObservableObject {
     @Published var previewImage: UIImage?
     @Published var isSaving = false
     @Published var errorMessage: String?
+    @Published private(set) var completionSummary: EntryCompletionSummary?
 
     let moodOptions = ["좋음", "평온", "피곤", "설렘", "복잡", "그저 그럼"]
 
@@ -21,6 +22,7 @@ final class EntryEditorViewModel: ObservableObject {
     private let entryRepository: EntryRepository
     private let imageStorageService: ImageStorageService
     private let streakService: StreakService
+    private let streakStateRepository: StreakStateRepository
     private let missionService: MissionService
     private var imageData: Data?
 
@@ -29,12 +31,14 @@ final class EntryEditorViewModel: ObservableObject {
         entryRepository: EntryRepository = EntryRepository(),
         imageStorageService: ImageStorageService = ImageStorageService(),
         streakService: StreakService = StreakService(),
+        streakStateRepository: StreakStateRepository = StreakStateRepository(),
         missionService: MissionService = MissionService()
     ) {
         self.existingEntry = existingEntry
         self.entryRepository = entryRepository
         self.imageStorageService = imageStorageService
         self.streakService = streakService
+        self.streakStateRepository = streakStateRepository
         self.missionService = missionService
         self.memo = existingEntry?.memo ?? ""
         self.selectedMood = existingEntry?.moodCode
@@ -65,6 +69,7 @@ final class EntryEditorViewModel: ObservableObject {
         guard isSaving == false else { return false }
 
         isSaving = true
+        completionSummary = nil
         defer { isSaving = false }
 
         do {
@@ -103,12 +108,41 @@ final class EntryEditorViewModel: ObservableObject {
             entry.sourceType = "library"
 
             try await entryRepository.upsert(entry)
-            _ = try await missionService.completeMission(for: dayKey)
+            let completedMission = try await missionService.completeMission(for: dayKey)
             try await streakService.recordCompletion(for: dayKey)
+
+            let streakState = (try? await streakStateRepository.fetchPrimaryState()) ?? StreakState(
+                currentStreak: 1,
+                longestStreak: 1,
+                lastCompletedLocalDateString: dayKey
+            )
+            completionSummary = EntryCompletionSummary(
+                currentStreak: max(streakState.currentStreak, 1),
+                missionTitle: completedMission.title,
+                missionCompleted: completedMission.isCompleted,
+                rewardText: "+20 XP",
+                returnMessage: Self.returnMessage(for: max(streakState.currentStreak, 1))
+            )
             return true
         } catch {
             errorMessage = "기록을 저장하는 중 오류가 발생했습니다."
             return false
         }
     }
+
+    private static func returnMessage(for currentStreak: Int) -> String {
+        if currentStreak <= 1 {
+            return "내일 다시 한 장을 남기면 2일 스트릭이 시작됩니다."
+        }
+
+        return "내일 한 장을 더 남기면 \(currentStreak + 1)일 스트릭으로 이어집니다."
+    }
+}
+
+struct EntryCompletionSummary: Equatable {
+    let currentStreak: Int
+    let missionTitle: String
+    let missionCompleted: Bool
+    let rewardText: String
+    let returnMessage: String
 }
