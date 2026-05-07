@@ -1,5 +1,6 @@
 import PhotosUI
 import SwiftUI
+import UIKit
 
 struct EntryEditorView: View {
     let existingEntry: DailyPhotoEntry?
@@ -8,6 +9,7 @@ struct EntryEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel: EntryEditorViewModel
     @State private var selectedPhotoItem: PhotosPickerItem?
+    @State private var isPresentingCamera = false
 
     init(existingEntry: DailyPhotoEntry?, onSaved: @escaping () async -> Void) {
         self.existingEntry = existingEntry
@@ -31,6 +33,17 @@ struct EntryEditorView: View {
             .navigationBarTitleDisplayMode(.inline)
             .task(id: selectedPhotoItem) {
                 await viewModel.loadPhotoItem(selectedPhotoItem)
+            }
+            .sheet(isPresented: $isPresentingCamera) {
+                CameraCaptureView { image in
+                    viewModel.loadCapturedImage(image)
+                    isPresentingCamera = false
+                } onCancel: {
+                    isPresentingCamera = false
+                } onFailure: { error in
+                    viewModel.handleCameraCaptureFailure(error)
+                    isPresentingCamera = false
+                }
             }
             .alert("저장할 수 없습니다", isPresented: Binding(get: {
                 viewModel.errorMessage != nil
@@ -72,21 +85,50 @@ struct EntryEditorView: View {
                         }
                 }
 
-                PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
-                    Label(existingEntry == nil ? "앨범에서 사진 선택" : "사진 다시 선택", systemImage: "photo.stack")
-                        .font(.system(.headline, design: .rounded, weight: .semibold))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 18)
-                        .background(AppTheme.Colors.secondaryAccent)
-                        .foregroundStyle(AppTheme.Colors.textPrimary)
-                        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                VStack(spacing: AppTheme.Spacing.small) {
+                    Button {
+                        isPresentingCamera = true
+                    } label: {
+                        Label(cameraButtonTitle, systemImage: "camera.fill")
+                            .font(.system(.headline, design: .rounded, weight: .semibold))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 18)
+                            .background(isCameraAvailable ? AppTheme.Colors.accent : AppTheme.Colors.muted)
+                            .foregroundStyle(isCameraAvailable ? Color.white : AppTheme.Colors.textSecondary)
+                            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                    }
+                    .disabled(isCameraAvailable == false)
+
+                    PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
+                        Label(existingEntry == nil ? "앨범에서 사진 선택" : "앨범에서 다시 선택", systemImage: "photo.stack")
+                            .font(.system(.headline, design: .rounded, weight: .semibold))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 18)
+                            .background(AppTheme.Colors.secondaryAccent)
+                            .foregroundStyle(AppTheme.Colors.textPrimary)
+                            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                    }
                 }
 
-                Text("카메라 촬영 연결은 다음 단계에서 붙입니다. 현재 단계에서는 저장 루프를 먼저 닫습니다.")
-                    .font(.system(.footnote, design: .rounded))
-                    .foregroundStyle(AppTheme.Colors.textSecondary)
+                if isCameraAvailable == false {
+                    Text("이 기기에서는 카메라를 사용할 수 없습니다. 앨범에서 사진을 선택해주세요.")
+                        .font(.system(.footnote, design: .rounded))
+                        .foregroundStyle(AppTheme.Colors.textSecondary)
+                }
             }
         }
+    }
+
+    private var isCameraAvailable: Bool {
+        UIImagePickerController.isSourceTypeAvailable(.camera)
+    }
+
+    private var cameraButtonTitle: String {
+        if isCameraAvailable == false {
+            return "카메라 사용 불가"
+        }
+
+        return existingEntry == nil ? "카메라로 촬영" : "카메라로 다시 촬영"
     }
 
     private var memoSection: some View {
