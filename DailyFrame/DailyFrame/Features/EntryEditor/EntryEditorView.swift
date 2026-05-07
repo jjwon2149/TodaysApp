@@ -79,6 +79,8 @@ struct EntryEditorView: View {
             }
             .padding(AppTheme.Spacing.medium)
         }
+        .background(KeyboardDismissTapHandler())
+        .scrollDismissesKeyboard(.immediately)
         .background(AppTheme.Colors.background)
         .navigationTitle(existingEntry == nil ? "오늘 기록" : "기록 수정")
         .navigationBarTitleDisplayMode(.inline)
@@ -238,6 +240,78 @@ struct EntryEditorView: View {
         defer { isSavedNotificationInFlight = false }
 
         await onSaved()
+    }
+}
+
+private struct KeyboardDismissTapHandler: UIViewRepresentable {
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+
+    func makeUIView(context: Context) -> UIView {
+        let view = UIView(frame: .zero)
+        view.isUserInteractionEnabled = false
+
+        DispatchQueue.main.async {
+            context.coordinator.installRecognizer(from: view)
+        }
+
+        return view
+    }
+
+    func updateUIView(_ uiView: UIView, context: Context) {
+        DispatchQueue.main.async {
+            context.coordinator.installRecognizer(from: uiView)
+        }
+    }
+
+    static func dismantleUIView(_ uiView: UIView, coordinator: Coordinator) {
+        coordinator.removeRecognizer()
+    }
+
+    final class Coordinator: NSObject, UIGestureRecognizerDelegate {
+        private weak var recognizer: UITapGestureRecognizer?
+
+        func installRecognizer(from view: UIView) {
+            guard recognizer == nil, let window = view.window else { return }
+
+            let recognizer = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+            recognizer.cancelsTouchesInView = false
+            recognizer.delegate = self
+            window.addGestureRecognizer(recognizer)
+            self.recognizer = recognizer
+        }
+
+        func removeRecognizer() {
+            guard let recognizer else { return }
+
+            recognizer.view?.removeGestureRecognizer(recognizer)
+            self.recognizer = nil
+        }
+
+        @objc private func dismissKeyboard() {
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        }
+
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+            var view = touch.view
+            while let currentView = view {
+                if currentView is UITextField || currentView is UITextView {
+                    return false
+                }
+
+                view = currentView.superview
+            }
+
+            return true
+        }
+
+        func gestureRecognizer(
+            _ gestureRecognizer: UIGestureRecognizer,
+            shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
+        ) -> Bool {
+            true
+        }
     }
 }
 
