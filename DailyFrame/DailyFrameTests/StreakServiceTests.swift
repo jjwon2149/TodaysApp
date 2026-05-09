@@ -108,11 +108,13 @@ final class StreakServiceTests: XCTestCase {
             )
         )
 
+        let testNow = date("2026-05-07")
         let viewModel = ProfileViewModel(
             entryRepository: entryRepository,
             streakService: streakService,
             streakStateRepository: streakRepository,
-            appSettingsRepository: settingsRepository
+            appSettingsRepository: settingsRepository,
+            nowProvider: { testNow }
         )
 
         await viewModel.load()

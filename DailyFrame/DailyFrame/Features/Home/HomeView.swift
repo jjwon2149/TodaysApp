@@ -106,7 +106,7 @@ struct HomeView: View {
                             .font(.system(.headline, design: .rounded, weight: .semibold))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
-                            .background(AppTheme.Colors.textPrimary)
+                            .background(AppTheme.Colors.brandGradient)
                             .foregroundStyle(Color.white)
                             .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
                     }
@@ -174,7 +174,7 @@ struct HomeView: View {
                             .font(.system(.headline, design: .rounded, weight: .semibold))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 18)
-                            .background(AppTheme.Colors.accent)
+                            .background(AppTheme.Colors.brandGradient)
                             .foregroundStyle(Color.white)
                             .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
                     }

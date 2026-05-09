@@ -13,6 +13,10 @@ struct AppCard<Content: View>: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(AppTheme.Colors.card)
             .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radius.large, style: .continuous))
-            .shadow(color: Color.black.opacity(0.06), radius: 18, x: 0, y: 8)
+            .overlay {
+                RoundedRectangle(cornerRadius: AppTheme.Radius.large, style: .continuous)
+                    .stroke(AppTheme.Colors.cardStroke, lineWidth: 1)
+            }
+            .shadow(color: Color.black.opacity(0.08), radius: 20, x: 0, y: 10)
     }
 }

@@ -19,6 +19,7 @@ final class ProfileViewModel: ObservableObject {
     private let streakStateRepository: StreakStateRepository
     private let appSettingsRepository: AppSettingsRepository
     private let notificationService: NotificationService
+    private let nowProvider: () -> Date
     private var appSettings = AppSettings()
     private var calendar: Calendar
 
@@ -28,15 +29,17 @@ final class ProfileViewModel: ObservableObject {
         streakStateRepository: StreakStateRepository = StreakStateRepository(),
         appSettingsRepository: AppSettingsRepository = AppSettingsRepository(),
         notificationService: NotificationService = NotificationService(),
-        calendar: Calendar = .current
+        calendar: Calendar = .current,
+        nowProvider: @escaping () -> Date = { .now }
     ) {
         self.entryRepository = entryRepository
         self.streakService = streakService
         self.streakStateRepository = streakStateRepository
         self.appSettingsRepository = appSettingsRepository
         self.notificationService = notificationService
+        self.nowProvider = nowProvider
         self.calendar = calendar
-        self.reminderTime = Self.date(hour: 21, minute: 0, calendar: calendar)
+        self.reminderTime = Self.date(hour: 21, minute: 0, calendar: calendar, now: nowProvider())
     }
 
     var totalEntriesText: String {
@@ -75,7 +78,7 @@ final class ProfileViewModel: ObservableObject {
         }
 
         do {
-            _ = try await streakService.evaluateMissedYesterdayIfNeeded()
+            _ = try await streakService.evaluateMissedYesterdayIfNeeded(now: nowProvider())
             let state = try await streakStateRepository.fetchPrimaryState()
             currentStreak = max(state.currentStreak, 0)
             longestStreak = max(state.longestStreak, 0)
@@ -112,7 +115,12 @@ final class ProfileViewModel: ObservableObject {
         defer { isUpdatingReminder = false }
 
         let components = reminderComponents(from: date)
-        reminderTime = Self.date(hour: components.hour, minute: components.minute, calendar: calendar)
+        reminderTime = Self.date(
+            hour: components.hour,
+            minute: components.minute,
+            calendar: calendar,
+            now: nowProvider()
+        )
 
         do {
             if reminderEnabled {
@@ -245,7 +253,8 @@ final class ProfileViewModel: ObservableObject {
         reminderTime = Self.date(
             hour: settings.reminderHour ?? 21,
             minute: settings.reminderMinute ?? 0,
-            calendar: calendar
+            calendar: calendar,
+            now: nowProvider()
         )
     }
 
@@ -266,11 +275,11 @@ final class ProfileViewModel: ObservableObject {
         )
     }
 
-    private static func date(hour: Int, minute: Int, calendar: Calendar) -> Date {
-        var components = calendar.dateComponents([.year, .month, .day], from: .now)
+    private static func date(hour: Int, minute: Int, calendar: Calendar, now: Date) -> Date {
+        var components = calendar.dateComponents([.year, .month, .day], from: now)
         components.hour = hour
         components.minute = minute
-        return calendar.date(from: components) ?? .now
+        return calendar.date(from: components) ?? now
     }
 
     private static func canScheduleNotification(for status: UNAuthorizationStatus) -> Bool {

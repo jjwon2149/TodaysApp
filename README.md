@@ -1,82 +1,97 @@
 # DailyFrame
 
-하루 한 장 사진 기록을 중심으로 `streak`, `mission`, `calendar`, `reflection` 구조를 붙인 iOS 습관 앱 프로젝트입니다.
+> 하루 한 장의 사진으로 오늘을 기록하고, 미션과 스트릭으로 다시 돌아오게 만드는 iOS 습관 앱입니다.
 
-## 방향
+![Swift](https://img.shields.io/badge/Swift-5.0-F05138?style=flat-square&logo=swift&logoColor=white)
+![SwiftUI](https://img.shields.io/badge/SwiftUI-iOS%2018.5-0A84FF?style=flat-square&logo=apple&logoColor=white)
+![Architecture](https://img.shields.io/badge/Architecture-MVVM-222222?style=flat-square)
+![Localization](https://img.shields.io/badge/Localization-KO%20%7C%20EN%20%7C%20JA-34C759?style=flat-square)
 
-- `BeReal`식 실시간 인증 앱으로 가지 않습니다.
-- `Duolingo`식 습관 형성 구조를 개인 사진 기록에 적용합니다.
-- 초기 MVP는 `개인 기록`, `로컬 저장`, `빠른 기록 루프`에 집중합니다.
+## Product Snapshot
 
-## 현재 Git 규칙
+DailyFrame은 공개 피드나 실시간 인증보다 `개인 기록`, `로컬 저장`, `빠른 기록 루프`에 집중합니다. 사용자는 매일 한 장의 사진과 짧은 메모를 남기고, 앱은 미션, 스트릭, 캘린더 아카이브로 기록을 이어갈 이유를 제공합니다.
 
-### 추적 파일 정책
+| Today | Capture | Complete | Calendar |
+| --- | --- | --- | --- |
+| ![Today screen](AppStoreScreenshots/01_today.png) | ![Capture screen](AppStoreScreenshots/02_capture.png) | ![Completion screen](AppStoreScreenshots/03_complete.png) | ![Calendar screen](AppStoreScreenshots/04_calendar.png) |
 
-1. `README.md`만 문서 파일로 추적합니다.
-2. 그 외 `*.md` 파일은 Git에 올리지 않습니다.
-3. Xcode 사용자별 파일과 빌드 산출물은 커밋하지 않습니다.
+## Highlights
 
-### 커밋 단위 규칙
+- **Habit loop**: 오늘의 미션, 기록 완료 보상, 스트릭 상태를 한 화면에서 확인합니다.
+- **Photo-first archive**: 기록한 날은 캘린더에서 사진 썸네일로 보이며 상세 기록으로 이어집니다.
+- **Local-first persistence**: 개인 기록 앱의 성격에 맞게 로컬 저장소 중심으로 설계했습니다.
+- **Media handling**: 원본 이미지와 썸네일을 분리 저장하고, 앱 시작 시 미디어 정리를 수행합니다.
+- **Notification settings**: 매일 기록 알림과 시간 설정을 프로필 화면에서 관리합니다.
+- **Localization**: 한국어, 영어, 일본어 문자열 리소스를 분리해 다국어 확장을 고려했습니다.
 
-1. 한 커밋은 하나의 의도만 가져갑니다.
-2. 화면 하나, 로직 하나, 버그 하나 수준으로 자릅니다.
-3. 문서 변경과 기능 변경은 가능하면 분리합니다.
-4. 확인하지 않은 변경은 커밋하지 않습니다.
+## Tech Stack
 
-### 커밋 전 확인 규칙
+| Area | Implementation |
+| --- | --- |
+| Platform | iOS 18.5+ |
+| Language | Swift 5 |
+| UI | SwiftUI, SF Symbols, custom design tokens |
+| Architecture | MVVM + service/repository layer |
+| Persistence | Local JSON/file storage |
+| Media | PhotosPicker, camera capture, thumbnail storage |
+| Tests | XCTest unit tests for streak behavior |
 
-1. 이번 작업과 관계없는 파일이 섞이지 않았는지 확인합니다.
-2. 임시 코드와 디버그 출력이 남지 않았는지 확인합니다.
-3. 가능한 경우 빌드 또는 관련 검증을 먼저 수행합니다.
-4. `git diff --staged` 기준으로 마지막 검토 후 커밋합니다.
-
-### 커밋 메시지 형식
+## Architecture
 
 ```text
-type(scope): summary
+DailyFrame/
+├── App/                 # RootView, tab composition
+├── DesignSystem/        # Color, spacing, card primitives
+├── Features/            # Home, Calendar, EntryEditor, EntryDetail, Profile, Onboarding
+├── Models/              # Entry, mission, streak, settings, profile models
+├── Services/            # Mission, streak, notification, media, persistence services
+├── Utilities/           # Date formatting and localization helpers
+└── *.lproj/             # KO / EN / JA localized resources
 ```
 
-예시:
+The code separates user-facing screens from app rules. View models orchestrate repositories and services, while persistence and media responsibilities remain behind focused service types.
 
-```text
-feat(home): 오늘 미션 카드 추가
-fix(streak): 기록 삭제 후 스트릭 재계산 수정
-chore(repo): Xcode 프로젝트와 Git 규칙 초기화
+## Core Flows
+
+1. **Onboarding** introduces the one-photo habit concept.
+2. **Home** shows the current streak, today's mission, today's entry, monthly progress, and recent records.
+3. **Entry editor** supports photo library import, camera capture, memo, mood, and save validation.
+4. **Completion** confirms the reward state and next streak goal.
+5. **Calendar** visualizes saved days as image thumbnails.
+6. **Archive/Profile** summarizes record counts, best streak, current streak, and reminder settings.
+
+## Quality Notes
+
+- Streak recalculation is covered by unit tests in `DailyFrameTests/StreakServiceTests.swift`.
+- UI copy is localized through `Localizable.strings` instead of hard-coded in feature views.
+- Personal media is stored locally; public feed, account system, and backend sync are intentionally out of MVP scope.
+- App Store style screenshots are kept in `AppStoreScreenshots/` so reviewers can understand the product without opening Xcode.
+
+## Run Locally
+
+1. Open `DailyFrame/DailyFrame.xcodeproj` in Xcode.
+2. Select the `DailyFrame` scheme.
+3. Run on an iOS 18.5+ simulator or device.
+
+CLI verification:
+
+```bash
+xcodebuild test \
+  -project DailyFrame/DailyFrame.xcodeproj \
+  -scheme DailyFrame \
+  -destination 'platform=iOS Simulator,name=iPhone 16'
 ```
 
-기본 원칙:
+## Roadmap
 
-1. 커밋 메시지는 `한국어`로 작성합니다.
-2. `type(scope)`는 영문으로 유지하고, 설명은 한국어로 작성합니다.
-3. 외부 협업이나 배포 자동화 때문에 꼭 필요한 경우에만 영어 메시지를 사용합니다.
+- [ ] Add richer entry search/filtering in the archive.
+- [ ] Add lightweight weekly review insights.
+- [ ] Expand widget and reminder surfaces.
+- [ ] Add iCloud sync after the local-first MVP is stable.
 
-### type 규칙
+## Repository Workflow
 
-- `feat`: 기능 추가
-- `fix`: 버그 수정
-- `refactor`: 동작 유지 리팩터링
-- `design`: UI 구조/스타일 변경
-- `chore`: 설정/환경 정리
-- `test`: 테스트 작업
-- `docs`: README 변경
-
-## 앞으로의 작업 방식
-
-기본 흐름은 아래로 고정합니다.
-
-1. 작업 목표를 먼저 한 줄로 정의합니다.
-2. 관련 파일만 수정합니다.
-3. 변경 범위를 확인합니다.
-4. 필요한 검증을 수행합니다.
-5. 작업 단위가 닫히면 바로 커밋합니다.
-
-## 권장 초기 구현 순서
-
-1. `Home`
-2. `Capture`
-3. `EntryEditor`
-4. `Save`
-5. `Streak`
-6. `Calendar`
-7. `EntryDetail`
-8. `Notification`
+- Commit messages use `type(scope): Korean summary`.
+- Keep one intent per commit.
+- Do not commit Xcode user state or build artifacts.
+- Verify relevant build/tests before merging.
