@@ -50,6 +50,7 @@
 "editor.title.edit" = "기록 수정";
 "editor.error.alert_title" = "저장할 수 없습니다";
 "editor.photo.empty" = "오늘의 한 장을 골라주세요";
+"editor.photo.empty_detail" = "저장 전 카메라 촬영이나 앨범 선택을 사용할 수 있습니다.";
 "editor.photo.pick" = "앨범에서 사진 선택";
 "editor.photo.repick" = "앨범에서 다시 선택";
 "editor.camera.unavailable" = "카메라 사용 불가";
@@ -67,9 +68,13 @@
 "editor.save.new" = "오늘의 한 장으로 저장";
 "editor.save.edit" = "변경사항 저장";
 "editor.saving" = "저장 중...";
+"editor.status.saving" = "사진을 저장하고 오늘 기록을 업데이트하는 중입니다.";
+"editor.status.photo_ready" = "사진이 선택되었습니다. 메모와 기분을 확인한 뒤 저장할 수 있습니다.";
+"editor.status.photo_required" = "오늘 기록을 저장하려면 사진을 선택하거나 촬영해 주세요.";
 "editor.completion.title" = "완료";
 "editor.completion.header" = "기록 완료";
 "editor.completion.home_action" = "홈으로 돌아가기";
+"editor.completion.returning" = "돌아가는 중...";
 "editor.completion.reward_title" = "오늘 보상";
 "editor.completion.current_streak" = "현재 스트릭";
 "editor.completion.mission_complete" = "미션 완료";

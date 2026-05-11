@@ -144,7 +144,10 @@ private struct CalendarDayCell: View {
     private func content(dayNumber: Int) -> some View {
         if let entry = cell.entry {
             ZStack(alignment: .topLeading) {
-                CalendarEntryThumbnailView(imagePath: entry.thumbnailLocalPath ?? entry.imageLocalPath)
+                CalendarEntryThumbnailView(
+                    thumbnailPath: entry.thumbnailLocalPath,
+                    fallbackImagePath: entry.imageLocalPath
+                )
 
                 LinearGradient(
                     colors: [.black.opacity(0.45), .clear],
@@ -195,10 +198,11 @@ private struct CalendarDayCell: View {
 }
 
 private struct CalendarEntryThumbnailView: View {
-    let imagePath: String
+    let thumbnailPath: String?
+    let fallbackImagePath: String
 
     var body: some View {
-        if let image = UIImage(contentsOfFile: imagePath) {
+        if let image = loadImage() {
             Image(uiImage: image)
                 .resizable()
                 .scaledToFill()
@@ -210,5 +214,15 @@ private struct CalendarEntryThumbnailView: View {
                         .foregroundStyle(AppTheme.Colors.accent)
                 }
         }
+    }
+
+    private func loadImage() -> UIImage? {
+        for path in [thumbnailPath, fallbackImagePath].compactMap({ $0 }) {
+            if let image = UIImage(contentsOfFile: path) {
+                return image
+            }
+        }
+
+        return nil
     }
 }

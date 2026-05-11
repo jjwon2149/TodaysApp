@@ -50,6 +50,7 @@
 "editor.title.edit" = "記録を編集";
 "editor.error.alert_title" = "保存できません";
 "editor.photo.empty" = "今日の一枚を選んでください";
+"editor.photo.empty_detail" = "保存前にカメラ撮影またはアルバム選択を利用できます。";
 "editor.photo.pick" = "アルバムから写真を選択";
 "editor.photo.repick" = "アルバムから再選択";
 "editor.camera.unavailable" = "カメラを使用できません";
@@ -67,9 +68,13 @@
 "editor.save.new" = "今日の一枚として保存";
 "editor.save.edit" = "変更を保存";
 "editor.saving" = "保存中...";
+"editor.status.saving" = "写真を保存し、今日の記録を更新しています。";
+"editor.status.photo_ready" = "写真が選択されました。メモと気分を確認して保存できます。";
+"editor.status.photo_required" = "今日の記録を保存するには、写真を選択または撮影してください。";
 "editor.completion.title" = "完了";
 "editor.completion.header" = "記録完了";
 "editor.completion.home_action" = "ホームへ戻る";
+"editor.completion.returning" = "戻っています...";
 "editor.completion.reward_title" = "今日の報酬";
 "editor.completion.current_streak" = "現在のストリーク";
 "editor.completion.mission_complete" = "ミッション達成";

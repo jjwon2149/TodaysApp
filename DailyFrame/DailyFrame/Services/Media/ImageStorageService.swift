@@ -2,9 +2,21 @@ import Foundation
 import UIKit
 
 struct ImageStorageService {
+    enum Policy {
+        static let storedImageMaxPixelDimension: CGFloat = 2_048
+        static let storedImageJPEGQuality: CGFloat = 0.82
+        static let thumbnailPixelSize: CGFloat = 480
+        static let thumbnailJPEGQuality: CGFloat = 0.78
+    }
+
     struct StoredEntryImage {
         let imageURL: URL
         let thumbnailURL: URL
+    }
+
+    struct EntryImageFileNames {
+        let imageFileName: String
+        let thumbnailFileName: String
     }
 
     struct MaintenanceResult {
@@ -26,10 +38,11 @@ struct ImageStorageService {
     }
 
     private let fileManager: FileManager
-    private let thumbnailPixelSize: CGFloat = 360
+    private let baseDirectoryURL: URL?
 
-    init(fileManager: FileManager = .default) {
+    init(fileManager: FileManager = .default, baseDirectoryURL: URL? = nil) {
         self.fileManager = fileManager
+        self.baseDirectoryURL = baseDirectoryURL
     }
 
     func makeEntriesDirectoryIfNeeded() throws -> URL {
@@ -42,18 +55,32 @@ struct ImageStorageService {
         return directory
     }
 
-    func saveImageData(_ data: Data, fileName: String) throws -> URL {
-        let directory = try makeEntriesDirectoryIfNeeded()
-        let fileURL = directory.appending(path: fileName)
-        try data.write(to: fileURL, options: [.atomic])
-        return fileURL
+    func makeEntryImageFileNames(localDateString: String, id: UUID = UUID()) -> EntryImageFileNames {
+        let imageFileName = "\(localDateString)-\(id.uuidString).jpg"
+        return EntryImageFileNames(
+            imageFileName: imageFileName,
+            thumbnailFileName: makeThumbnailFileName(localDateString: localDateString, id: id)
+        )
+    }
+
+    func makeThumbnailFileName(localDateString: String, id: UUID = UUID()) -> String {
+        "\(localDateString)-\(id.uuidString)-thumbnail.jpg"
     }
 
     func saveEntryImageData(_ data: Data, imageFileName: String, thumbnailFileName: String) throws -> StoredEntryImage {
-        let imageURL = try saveImageData(data, fileName: imageFileName)
+        try validateFileName(imageFileName)
+        try validateFileName(thumbnailFileName)
+
+        guard let image = UIImage(data: data) else {
+            throw CocoaError(.fileReadCorruptFile)
+        }
+
+        let storedImageData = try makeStoredJPEGData(from: image)
+        let thumbnailData = try makeThumbnailJPEGData(from: image)
+        let imageURL = try saveImageData(storedImageData, fileName: imageFileName)
 
         do {
-            let thumbnailURL = try saveThumbnailData(from: data, fileName: thumbnailFileName)
+            let thumbnailURL = try saveImageData(thumbnailData, fileName: thumbnailFileName)
             return StoredEntryImage(imageURL: imageURL, thumbnailURL: thumbnailURL)
         } catch {
             try? deleteFileIfExists(at: imageURL.path)
@@ -66,7 +93,8 @@ struct ImageStorageService {
             throw CocoaError(.fileReadCorruptFile)
         }
 
-        return try saveThumbnailImage(image, fileName: fileName)
+        try validateFileName(fileName)
+        return try saveImageData(makeThumbnailJPEGData(from: image), fileName: fileName)
     }
 
     func deleteFileIfExists(at path: String) throws {
@@ -105,7 +133,7 @@ struct ImageStorageService {
         do {
             let thumbnailURL = try saveThumbnail(
                 forImageAt: entry.imageLocalPath,
-                fileName: makeThumbnailFileName(for: entry)
+                fileName: makeThumbnailFileName(localDateString: entry.localDateString)
             )
             let didUpdate = try await entryRepository.setThumbnailLocalPath(
                 thumbnailURL.path,
@@ -161,20 +189,37 @@ struct ImageStorageService {
         }
     }
 
-    private func saveThumbnailData(from data: Data, fileName: String) throws -> URL {
-        guard let image = UIImage(data: data) else {
-            throw CocoaError(.fileReadCorruptFile)
-        }
-
-        return try saveThumbnailImage(image, fileName: fileName)
-    }
-
-    private func saveThumbnailImage(_ image: UIImage, fileName: String) throws -> URL {
+    private func makeStoredJPEGData(from image: UIImage) throws -> Data {
         guard image.size.width > 0, image.size.height > 0 else {
             throw CocoaError(.fileReadCorruptFile)
         }
 
-        let targetSize = CGSize(width: thumbnailPixelSize, height: thumbnailPixelSize)
+        let longestSide = max(image.size.width, image.size.height)
+        let scale = min(1, Policy.storedImageMaxPixelDimension / longestSide)
+        let targetSize = CGSize(
+            width: max(1, floor(image.size.width * scale)),
+            height: max(1, floor(image.size.height * scale))
+        )
+
+        let renderedImage = renderImage(
+            image,
+            canvasSize: targetSize,
+            drawRect: CGRect(origin: .zero, size: targetSize)
+        )
+
+        guard let data = renderedImage.jpegData(compressionQuality: Policy.storedImageJPEGQuality) else {
+            throw CocoaError(.fileWriteUnknown)
+        }
+
+        return data
+    }
+
+    private func makeThumbnailJPEGData(from image: UIImage) throws -> Data {
+        guard image.size.width > 0, image.size.height > 0 else {
+            throw CocoaError(.fileReadCorruptFile)
+        }
+
+        let targetSize = CGSize(width: Policy.thumbnailPixelSize, height: Policy.thumbnailPixelSize)
         let scale = max(targetSize.width / image.size.width, targetSize.height / image.size.height)
         let scaledSize = CGSize(width: image.size.width * scale, height: image.size.height * scale)
         let origin = CGPoint(
@@ -182,26 +227,46 @@ struct ImageStorageService {
             y: (targetSize.height - scaledSize.height) / 2
         )
 
+        let thumbnail = renderImage(
+            image,
+            canvasSize: targetSize,
+            drawRect: CGRect(origin: origin, size: scaledSize)
+        )
+
+        guard let data = thumbnail.jpegData(compressionQuality: Policy.thumbnailJPEGQuality) else {
+            throw CocoaError(.fileWriteUnknown)
+        }
+
+        return data
+    }
+
+    private func renderImage(_ image: UIImage, canvasSize: CGSize, drawRect: CGRect) -> UIImage {
         let format = UIGraphicsImageRendererFormat()
         format.scale = 1
         format.opaque = true
 
-        let renderer = UIGraphicsImageRenderer(size: targetSize, format: format)
-        let thumbnail = renderer.image { context in
+        let renderer = UIGraphicsImageRenderer(size: canvasSize, format: format)
+        return renderer.image { context in
             UIColor.white.setFill()
-            context.fill(CGRect(origin: .zero, size: targetSize))
-            image.draw(in: CGRect(origin: origin, size: scaledSize))
+            context.fill(CGRect(origin: .zero, size: canvasSize))
+            image.draw(in: drawRect)
         }
-
-        guard let data = thumbnail.jpegData(compressionQuality: 0.78) else {
-            throw CocoaError(.fileWriteUnknown)
-        }
-
-        return try saveImageData(data, fileName: fileName)
     }
 
-    private func makeThumbnailFileName(for entry: DailyPhotoEntry) -> String {
-        "\(entry.localDateString)-\(UUID().uuidString)-thumbnail.jpg"
+    private func saveImageData(_ data: Data, fileName: String) throws -> URL {
+        let directory = try makeEntriesDirectoryIfNeeded()
+        let fileURL = directory.appendingPathComponent(fileName, isDirectory: false)
+        try data.write(to: fileURL, options: [.atomic])
+        return fileURL
+    }
+
+    private func validateFileName(_ fileName: String) throws {
+        guard fileName.isEmpty == false,
+              fileName == URL(fileURLWithPath: fileName).lastPathComponent,
+              fileName.hasSuffix(".jpg")
+        else {
+            throw CocoaError(.fileWriteInvalidFileName)
+        }
     }
 
     private func standardizedPath(_ path: String) -> String {
@@ -209,6 +274,10 @@ struct ImageStorageService {
     }
 
     private func baseDirectory() throws -> URL {
+        if let baseDirectoryURL {
+            return baseDirectoryURL
+        }
+
         guard let directory = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
             throw CocoaError(.fileNoSuchFile)
         }

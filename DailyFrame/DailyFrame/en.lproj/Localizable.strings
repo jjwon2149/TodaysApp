@@ -50,6 +50,7 @@
 "editor.title.edit" = "Edit Entry";
 "editor.error.alert_title" = "Cannot Save";
 "editor.photo.empty" = "Choose today's photo";
+"editor.photo.empty_detail" = "Camera and library are both available before saving.";
 "editor.photo.pick" = "Choose from Library";
 "editor.photo.repick" = "Choose Again from Library";
 "editor.camera.unavailable" = "Camera Unavailable";
@@ -67,9 +68,13 @@
 "editor.save.new" = "Save Today's Photo";
 "editor.save.edit" = "Save Changes";
 "editor.saving" = "Saving...";
+"editor.status.saving" = "Saving your photo and updating today's entry.";
+"editor.status.photo_ready" = "Photo selected. You can save when the note and mood are ready.";
+"editor.status.photo_required" = "Select or take a photo before saving today's entry.";
 "editor.completion.title" = "Complete";
 "editor.completion.header" = "Entry Complete";
 "editor.completion.home_action" = "Return Home";
+"editor.completion.returning" = "Returning...";
 "editor.completion.reward_title" = "Today's Reward";
 "editor.completion.current_streak" = "Current Streak";
 "editor.completion.mission_complete" = "Mission Complete";

@@ -32,7 +32,8 @@ struct EntryEditorView: View {
                     EntryCompletionView(
                         summary: completionSummary,
                         actionTitle: completionActionTitle,
-                        isActionDisabled: shouldHoldCompletionDismissal
+                        isActionDisabled: shouldHoldCompletionDismissal,
+                        isActionInFlight: isSavedNotificationInFlight
                     ) {
                         Task {
                             await notifySavedOnce()
@@ -55,10 +56,10 @@ struct EntryEditorView: View {
                 }
             }
             .alert(L10n.string("editor.error.alert_title"), isPresented: Binding(get: {
-                viewModel.errorMessage != nil
+                viewModel.isShowingErrorAlert
             }, set: { newValue in
                 if newValue == false {
-                    viewModel.errorMessage = nil
+                    viewModel.dismissErrorAlert()
                 }
             })) {
                 Button(L10n.string("common.ok"), role: .cancel) {}
@@ -75,9 +76,11 @@ struct EntryEditorView: View {
                 previewSection
                 memoSection
                 moodSection
+                saveStatusSection
                 saveSection
             }
             .padding(AppTheme.Spacing.medium)
+            .disabled(viewModel.isSaving)
         }
         .background(KeyboardDismissTapHandler())
         .scrollDismissesKeyboard(.immediately)
@@ -92,28 +95,7 @@ struct EntryEditorView: View {
     private var previewSection: some View {
         AppCard {
             VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
-                if let previewImage = viewModel.previewImage {
-                    Image(uiImage: previewImage)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(height: 280)
-                        .frame(maxWidth: .infinity)
-                        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-                } else {
-                    RoundedRectangle(cornerRadius: 24, style: .continuous)
-                        .fill(AppTheme.Colors.muted)
-                        .frame(height: 280)
-                        .overlay {
-                            VStack(spacing: AppTheme.Spacing.small) {
-                                Image(systemName: "photo.badge.plus")
-                                    .font(.system(size: 32, weight: .semibold))
-                                    .foregroundStyle(AppTheme.Colors.textSecondary)
-
-                                Text("editor.photo.empty")
-                                    .font(.system(.headline, design: .rounded, weight: .semibold))
-                            }
-                        }
-                }
+                photoPreview
 
                 VStack(spacing: AppTheme.Spacing.small) {
                     Button {
@@ -127,7 +109,7 @@ struct EntryEditorView: View {
                             .foregroundStyle(isCameraAvailable ? Color.white : AppTheme.Colors.textSecondary)
                             .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
                     }
-                    .disabled(isCameraAvailable == false)
+                    .disabled(isCameraAvailable == false || viewModel.isSaving)
 
                     PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
                         Label(existingEntry == nil ? L10n.string("editor.photo.pick") : L10n.string("editor.photo.repick"), systemImage: "photo.stack")
@@ -138,6 +120,7 @@ struct EntryEditorView: View {
                             .foregroundStyle(AppTheme.Colors.textPrimary)
                             .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
                     }
+                    .disabled(viewModel.isSaving)
                 }
 
                 if isCameraAvailable == false {
@@ -151,6 +134,80 @@ struct EntryEditorView: View {
 
     private var isCameraAvailable: Bool {
         UIImagePickerController.isSourceTypeAvailable(.camera)
+    }
+
+    private var photoPreview: some View {
+        ZStack {
+            if let previewImage = viewModel.previewImage {
+                Image(uiImage: previewImage)
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                Rectangle()
+                    .fill(emptyPhotoBackground)
+                    .overlay {
+                        VStack(spacing: AppTheme.Spacing.small) {
+                            Image(systemName: "photo.badge.plus")
+                                .font(.system(size: 32, weight: .semibold))
+                                .foregroundStyle(emptyPhotoForeground)
+
+                            Text("editor.photo.empty")
+                                .font(.system(.headline, design: .rounded, weight: .semibold))
+                                .foregroundStyle(AppTheme.Colors.textPrimary)
+
+                            Text("editor.photo.empty_detail")
+                                .font(.system(.subheadline, design: .rounded))
+                                .foregroundStyle(AppTheme.Colors.textSecondary)
+                                .multilineTextAlignment(.center)
+                        }
+                        .padding(AppTheme.Spacing.medium)
+                    }
+            }
+
+            if viewModel.isSaving {
+                savingOverlay
+            }
+        }
+        .frame(height: 280)
+        .frame(maxWidth: .infinity)
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .stroke(emptyPhotoStroke, lineWidth: viewModel.hasPhoto ? 0 : 1)
+        }
+    }
+
+    private var savingOverlay: some View {
+        ZStack {
+            Color.black.opacity(0.34)
+
+            VStack(spacing: AppTheme.Spacing.small) {
+                ProgressView()
+                    .tint(.white)
+
+                Text("editor.saving")
+                    .font(.system(.headline, design: .rounded, weight: .semibold))
+                    .foregroundStyle(Color.white)
+            }
+        }
+    }
+
+    private var emptyPhotoBackground: Color {
+        viewModel.errorMessage != nil && viewModel.hasPhoto == false
+            ? Color.red.opacity(0.12)
+            : AppTheme.Colors.muted
+    }
+
+    private var emptyPhotoForeground: Color {
+        viewModel.errorMessage != nil && viewModel.hasPhoto == false
+            ? Color.red
+            : AppTheme.Colors.textSecondary
+    }
+
+    private var emptyPhotoStroke: Color {
+        viewModel.errorMessage != nil && viewModel.hasPhoto == false
+            ? Color.red.opacity(0.45)
+            : Color.clear
     }
 
     private var cameraButtonTitle: String {
@@ -172,6 +229,7 @@ struct EntryEditorView: View {
                     .padding(AppTheme.Spacing.medium)
                     .background(AppTheme.Colors.muted)
                     .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .disabled(viewModel.isSaving)
             }
         }
     }
@@ -195,14 +253,75 @@ struct EntryEditorView: View {
                                 .foregroundStyle(viewModel.selectedMood == mood.id ? Color.white : AppTheme.Colors.textPrimary)
                                 .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
                         }
+                        .disabled(viewModel.isSaving)
                     }
                 }
             }
         }
     }
 
+    private var saveStatusSection: some View {
+        let status = saveStatus
+
+        return HStack(alignment: .top, spacing: AppTheme.Spacing.small) {
+            Image(systemName: status.symbolName)
+                .font(.system(.subheadline, design: .rounded, weight: .bold))
+                .foregroundStyle(status.tint)
+                .frame(width: 24)
+
+            Text(status.message)
+                .font(.system(.subheadline, design: .rounded, weight: .medium))
+                .foregroundStyle(AppTheme.Colors.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Spacer(minLength: 0)
+        }
+        .padding(AppTheme.Spacing.medium)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(status.background)
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+
+    private var saveStatus: EntryEditorSaveStatus {
+        if viewModel.isSaving {
+            return EntryEditorSaveStatus(
+                message: L10n.string("editor.status.saving"),
+                symbolName: "clock.fill",
+                tint: AppTheme.Colors.accent,
+                background: AppTheme.Colors.secondaryAccent
+            )
+        }
+
+        if let errorMessage = viewModel.errorMessage {
+            return EntryEditorSaveStatus(
+                message: errorMessage,
+                symbolName: "exclamationmark.triangle.fill",
+                tint: Color.red,
+                background: Color.red.opacity(0.10)
+            )
+        }
+
+        if viewModel.hasPhoto {
+            return EntryEditorSaveStatus(
+                message: L10n.string("editor.status.photo_ready"),
+                symbolName: "checkmark.circle.fill",
+                tint: AppTheme.Colors.success,
+                background: AppTheme.Colors.success.opacity(0.12)
+            )
+        }
+
+        return EntryEditorSaveStatus(
+            message: L10n.string("editor.status.photo_required"),
+            symbolName: "photo.badge.plus",
+            tint: AppTheme.Colors.textSecondary,
+            background: AppTheme.Colors.muted
+        )
+    }
+
     private var saveSection: some View {
         Button {
+            guard isSaveButtonDisabled == false else { return }
+
             Task {
                 let saved = await viewModel.saveEntry()
                 guard saved else { return }
@@ -224,7 +343,11 @@ struct EntryEditorView: View {
             .foregroundStyle(Color.white)
             .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         }
-        .disabled(viewModel.isSaving)
+        .disabled(isSaveButtonDisabled)
+    }
+
+    private var isSaveButtonDisabled: Bool {
+        viewModel.isSaving || viewModel.hasPhoto == false
     }
 
     private var shouldHoldCompletionDismissal: Bool {
@@ -241,6 +364,13 @@ struct EntryEditorView: View {
 
         await onSaved()
     }
+}
+
+private struct EntryEditorSaveStatus {
+    let message: String
+    let symbolName: String
+    let tint: Color
+    let background: Color
 }
 
 private struct KeyboardDismissTapHandler: UIViewRepresentable {
@@ -319,6 +449,7 @@ private struct EntryCompletionView: View {
     let summary: EntryCompletionSummary
     let actionTitle: String
     let isActionDisabled: Bool
+    let isActionInFlight: Bool
     let onAction: () -> Void
 
     var body: some View {
@@ -389,13 +520,22 @@ private struct EntryCompletionView: View {
 
     private var actionButton: some View {
         Button(action: onAction) {
-            Label(actionTitle, systemImage: "house.fill")
-                .font(.system(.headline, design: .rounded, weight: .semibold))
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 18)
-                .background(AppTheme.Colors.accent)
-                .foregroundStyle(Color.white)
-                .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+            HStack(spacing: AppTheme.Spacing.small) {
+                if isActionInFlight {
+                    ProgressView()
+                        .tint(.white)
+                } else {
+                    Image(systemName: "house.fill")
+                }
+
+                Text(isActionInFlight ? L10n.string("editor.completion.returning") : actionTitle)
+            }
+            .font(.system(.headline, design: .rounded, weight: .semibold))
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 18)
+            .background(isActionDisabled ? AppTheme.Colors.muted : AppTheme.Colors.accent)
+            .foregroundStyle(isActionDisabled ? AppTheme.Colors.textSecondary : Color.white)
+            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         }
         .disabled(isActionDisabled)
     }

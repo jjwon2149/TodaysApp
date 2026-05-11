@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		BBD000122FAB900000000001 /* ImageStorageServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBD000112FAB900000000001 /* ImageStorageServiceTests.swift */; };
 		BBD000022FAB900000000001 /* StreakServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBD000012FAB900000000001 /* StreakServiceTests.swift */; };
 /* End PBXBuildFile section */
 
@@ -22,6 +23,7 @@
 
 /* Begin PBXFileReference section */
 		4AF351A92FAB82320053AF89 /* DailyFrame.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DailyFrame.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		BBD000112FAB900000000001 /* ImageStorageServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageStorageServiceTests.swift; sourceTree = "<group>"; };
 		BBD000012FAB900000000001 /* StreakServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreakServiceTests.swift; sourceTree = "<group>"; };
 		BBD000032FAB900000000001 /* DailyFrameTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DailyFrameTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -73,6 +75,7 @@
 		BBD000042FAB900000000001 /* DailyFrameTests */ = {
 			isa = PBXGroup;
 			children = (
+				BBD000112FAB900000000001 /* ImageStorageServiceTests.swift */,
 				BBD000012FAB900000000001 /* StreakServiceTests.swift */,
 			);
 			path = DailyFrameTests;
@@ -193,6 +196,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BBD000122FAB900000000001 /* ImageStorageServiceTests.swift in Sources */,
 				BBD000022FAB900000000001 /* StreakServiceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

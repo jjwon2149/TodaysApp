@@ -10,9 +10,14 @@ final class EntryEditorViewModel: ObservableObject {
     @Published var previewImage: UIImage?
     @Published var isSaving = false
     @Published var errorMessage: String?
+    @Published private(set) var isShowingErrorAlert = false
     @Published private(set) var completionSummary: EntryCompletionSummary?
 
     let moodOptions = MoodLocalization.options
+
+    var hasPhoto: Bool {
+        previewImage != nil || existingEntry?.imageLocalPath != nil
+    }
 
     var saveButtonTitle: String {
         existingEntry == nil ? L10n.string("editor.save.new") : L10n.string("editor.save.edit")
@@ -52,25 +57,28 @@ final class EntryEditorViewModel: ObservableObject {
 
     func loadPhotoItem(_ item: PhotosPickerItem?) async {
         guard let item else { return }
+        clearError()
 
         do {
             guard let data = try await item.loadTransferable(type: Data.self),
                   let image = UIImage(data: data) else {
-                errorMessage = L10n.string("error.photo.load")
+                presentError(L10n.string("error.photo.load"))
                 return
             }
 
             previewImage = image
-            imageData = image.jpegData(compressionQuality: 0.86) ?? data
+            imageData = data
             imageSourceType = "library"
         } catch {
-            errorMessage = L10n.string("error.photo.import")
+            presentError(L10n.string("error.photo.import"))
         }
     }
 
     func loadCapturedImage(_ image: UIImage) {
-        guard let data = image.jpegData(compressionQuality: 0.86) else {
-            errorMessage = L10n.string("error.camera.process")
+        clearError()
+
+        guard let data = image.jpegData(compressionQuality: 1.0) else {
+            presentError(L10n.string("error.camera.process"))
             return
         }
 
@@ -80,11 +88,22 @@ final class EntryEditorViewModel: ObservableObject {
     }
 
     func handleCameraCaptureFailure(_ error: Error) {
-        errorMessage = error.localizedDescription
+        presentError(error.localizedDescription)
+    }
+
+    func dismissErrorAlert() {
+        isShowingErrorAlert = false
     }
 
     func saveEntry() async -> Bool {
         guard isSaving == false else { return false }
+
+        clearError()
+
+        guard hasPhoto else {
+            presentError(L10n.string("error.save.no_photo"))
+            return false
+        }
 
         isSaving = true
         completionSummary = nil
@@ -97,11 +116,11 @@ final class EntryEditorViewModel: ObservableObject {
             var createdPaths: [String] = []
 
             if let imageData {
-                let fileID = UUID().uuidString
+                let fileNames = imageStorageService.makeEntryImageFileNames(localDateString: dayKey)
                 let storedImage = try imageStorageService.saveEntryImageData(
                     imageData,
-                    imageFileName: "\(dayKey)-\(fileID).jpg",
-                    thumbnailFileName: "\(dayKey)-\(fileID)-thumbnail.jpg"
+                    imageFileName: fileNames.imageFileName,
+                    thumbnailFileName: fileNames.thumbnailFileName
                 )
                 storedPath = storedImage.imageURL.path
                 thumbnailPath = storedImage.thumbnailURL.path
@@ -112,7 +131,7 @@ final class EntryEditorViewModel: ObservableObject {
                 if let existingThumbnailPath = existingEntry?.thumbnailLocalPath {
                     thumbnailPath = existingThumbnailPath
                 } else {
-                    let fileName = "\(dayKey)-\(UUID().uuidString)-thumbnail.jpg"
+                    let fileName = imageStorageService.makeThumbnailFileName(localDateString: dayKey)
                     // Legacy thumbnail backfill is opportunistic; memo/mood edits should still save.
                     if let generatedThumbnailPath = try? imageStorageService.saveThumbnail(
                         forImageAt: existingPath,
@@ -125,7 +144,7 @@ final class EntryEditorViewModel: ObservableObject {
                     }
                 }
             } else {
-                errorMessage = L10n.string("error.save.no_photo")
+                presentError(L10n.string("error.save.no_photo"))
                 return false
             }
 
@@ -189,9 +208,19 @@ final class EntryEditorViewModel: ObservableObject {
 
             return true
         } catch {
-            errorMessage = L10n.string("error.save.entry")
+            presentError(L10n.string("error.save.entry"))
             return false
         }
+    }
+
+    private func clearError() {
+        errorMessage = nil
+        isShowingErrorAlert = false
+    }
+
+    private func presentError(_ message: String) {
+        errorMessage = message
+        isShowingErrorAlert = true
     }
 
     private func deleteReplacedImageFiles(newImagePath: String, newThumbnailPath: String?) {
