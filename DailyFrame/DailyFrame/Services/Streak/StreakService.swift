@@ -22,6 +22,13 @@ struct StreakService {
             return
         }
 
+        if let lastCompleted = state.lastCompletedLocalDateString,
+           let lastDate = DailyFrameDateFormatter.date(from: lastCompleted),
+           let currentDate = DailyFrameDateFormatter.date(from: localDateString),
+           currentDate < lastDate {
+            return
+        }
+
         let nextStreak: Int
 
         if let lastCompleted = state.lastCompletedLocalDateString,

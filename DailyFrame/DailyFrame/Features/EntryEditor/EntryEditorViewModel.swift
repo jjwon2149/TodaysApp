@@ -153,6 +153,7 @@ final class EntryEditorViewModel: ObservableObject {
 
             do {
                 entryRollbackState = try await makeEntryRollbackState()
+                let isEditingExistingEntry = existingEntry != nil
                 let mission = try await missionService.mission(for: dayKey)
                 var entry = existingEntry ?? DailyPhotoEntry(
                     localDateString: dayKey,
@@ -166,14 +167,22 @@ final class EntryEditorViewModel: ObservableObject {
                 entry.thumbnailLocalPath = thumbnailPath
                 entry.memo = memo.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : memo.trimmingCharacters(in: .whitespacesAndNewlines)
                 entry.moodCode = selectedMood
-                entry.missionId = mission.id
-                entry.missionCompleted = true
+                entry.missionId = isEditingExistingEntry ? existingEntry?.missionId : mission.id
+                entry.missionCompleted = isEditingExistingEntry ? existingEntry?.missionCompleted ?? false : true
                 entry.sourceType = imageSourceType
 
                 try await entryRepository.upsert(entry)
                 didUpsertEntry = true
-                let completedMission = try await missionService.completeMission(for: dayKey)
-                try await streakService.recordCompletion(for: dayKey)
+
+                let shouldRecordCompletion = isEditingExistingEntry == false
+                let summaryMission: DailyMission
+
+                if shouldRecordCompletion {
+                    summaryMission = try await missionService.completeMission(for: dayKey)
+                    try await streakService.recordCompletion(for: dayKey)
+                } else {
+                    summaryMission = mission
+                }
 
                 deleteReplacedImageFiles(newImagePath: storedPath, newThumbnailPath: thumbnailPath)
 
@@ -184,8 +193,8 @@ final class EntryEditorViewModel: ObservableObject {
                 )
                 completionSummary = EntryCompletionSummary(
                     currentStreak: max(streakState.currentStreak, 1),
-                    missionTitle: completedMission.localizedTitle,
-                    missionCompleted: completedMission.isCompleted,
+                    missionTitle: summaryMission.localizedTitle,
+                    missionCompleted: shouldRecordCompletion ? summaryMission.isCompleted : entry.missionCompleted,
                     rewardText: L10n.string("editor.completion.reward_xp"),
                     returnMessage: Self.returnMessage(for: max(streakState.currentStreak, 1))
                 )
