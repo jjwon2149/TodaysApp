@@ -20,9 +20,14 @@ struct ImageStorageService {
     }
 
     struct MaintenanceResult {
+        private(set) var migratedReferenceCount = 0
         private(set) var backfilledThumbnailCount = 0
         private(set) var deletedOrphanFileCount = 0
         private(set) var failureCount = 0
+
+        fileprivate mutating func recordMigratedReference() {
+            migratedReferenceCount += 1
+        }
 
         fileprivate mutating func recordBackfilledThumbnail() {
             backfilledThumbnailCount += 1
@@ -38,11 +43,16 @@ struct ImageStorageService {
     }
 
     private let fileManager: FileManager
-    private let baseDirectoryURL: URL?
+    private let entriesDirectoryURL: URL?
 
     init(fileManager: FileManager = .default, baseDirectoryURL: URL? = nil) {
         self.fileManager = fileManager
-        self.baseDirectoryURL = baseDirectoryURL
+        self.entriesDirectoryURL = baseDirectoryURL
+    }
+
+    init(fileManager: FileManager = .default, entriesDirectoryURL: URL? = nil) {
+        self.fileManager = fileManager
+        self.entriesDirectoryURL = entriesDirectoryURL
     }
 
     func makeEntriesDirectoryIfNeeded() throws -> URL {
@@ -89,7 +99,9 @@ struct ImageStorageService {
     }
 
     func saveThumbnail(forImageAt imagePath: String, fileName: String) throws -> URL {
-        guard let image = UIImage(contentsOfFile: imagePath) else {
+        guard let imageURL = resolvedFileURL(for: imagePath),
+              let image = UIImage(contentsOfFile: imageURL.path)
+        else {
             throw CocoaError(.fileReadCorruptFile)
         }
 
@@ -98,11 +110,71 @@ struct ImageStorageService {
     }
 
     func deleteFileIfExists(at path: String) throws {
-        guard fileManager.fileExists(atPath: path) else {
+        guard let fileURL = resolvedFileURL(for: path),
+              fileManager.fileExists(atPath: fileURL.path)
+        else {
             return
         }
 
-        try fileManager.removeItem(atPath: path)
+        try fileManager.removeItem(at: fileURL)
+    }
+
+    func mediaReference(for fileURL: URL) throws -> String {
+        let entriesDirectory = try makeEntriesDirectoryIfNeeded()
+        let standardizedURL = fileURL.standardizedFileURL
+
+        guard isURL(standardizedURL, containedIn: entriesDirectory) else {
+            return standardizedURL.lastPathComponent
+        }
+
+        return standardizedURL.lastPathComponent
+    }
+
+    func normalizedMediaReference(for reference: String) -> String {
+        let trimmedReference = reference.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard trimmedReference.isEmpty == false else {
+            return reference
+        }
+
+        if let fileURL = URL(string: trimmedReference), fileURL.isFileURL {
+            return fileURL.lastPathComponent
+        }
+
+        let fileName = URL(fileURLWithPath: trimmedReference).lastPathComponent
+        return fileName.isEmpty ? trimmedReference : fileName
+    }
+
+    func resolvedFileURL(for reference: String) -> URL? {
+        let fileName = normalizedMediaReference(for: reference)
+
+        guard fileName.isEmpty == false,
+              fileName != ".",
+              fileName != "..",
+              fileName.contains("/") == false
+        else {
+            return nil
+        }
+
+        guard let directory = try? makeEntriesDirectoryIfNeeded() else {
+            return nil
+        }
+
+        let fileURL = directory.appending(path: fileName).standardizedFileURL
+        guard fileManager.fileExists(atPath: fileURL.path) else {
+            return nil
+        }
+
+        return fileURL
+    }
+
+    func resolvedThumbnailFileURL(thumbnailReference: String?, imageReference: String) -> URL? {
+        if let thumbnailReference,
+           let thumbnailURL = resolvedFileURL(for: thumbnailReference) {
+            return thumbnailURL
+        }
+
+        return resolvedFileURL(for: imageReference)
     }
 
     @discardableResult
@@ -110,14 +182,15 @@ struct ImageStorageService {
         var result = MaintenanceResult()
 
         do {
+            try await migrateMediaReferences(entryRepository: entryRepository, result: &result)
             let entries = try await entryRepository.fetchAllActiveEntries()
 
             for entry in entries where entry.thumbnailLocalPath == nil {
                 await backfillThumbnailIfNeeded(for: entry, entryRepository: entryRepository, result: &result)
             }
 
-            let referencedPaths = try await entryRepository.fetchActiveMediaLocalPaths()
-            deleteOrphanFiles(referencedPaths: referencedPaths, result: &result)
+            let refreshedEntries = try await entryRepository.fetchAllActiveEntries()
+            deleteOrphanFiles(referencedFileNames: referencedMediaFileNames(from: refreshedEntries), result: &result)
         } catch {
             result.recordFailure()
         }
@@ -135,8 +208,9 @@ struct ImageStorageService {
                 forImageAt: entry.imageLocalPath,
                 fileName: makeThumbnailFileName(localDateString: entry.localDateString)
             )
+            let thumbnailReference = try mediaReference(for: thumbnailURL)
             let didUpdate = try await entryRepository.setThumbnailLocalPath(
-                thumbnailURL.path,
+                thumbnailReference,
                 for: entry.localDateString,
                 matchingImageLocalPath: entry.imageLocalPath
             )
@@ -144,16 +218,42 @@ struct ImageStorageService {
             if didUpdate {
                 result.recordBackfilledThumbnail()
             } else {
-                try? deleteFileIfExists(at: thumbnailURL.path)
+                try? deleteFileIfExists(at: thumbnailReference)
             }
         } catch {
             result.recordFailure()
         }
     }
 
-    private func deleteOrphanFiles(referencedPaths: Set<String>, result: inout MaintenanceResult) {
-        let referencedPaths = Set(referencedPaths.map(standardizedPath))
+    private func migrateMediaReferences(entryRepository: EntryRepository, result: inout MaintenanceResult) async throws {
+        try await entryRepository.store.update { snapshot in
+            for index in snapshot.entries.indices {
+                let imageReference = normalizedMediaReference(for: snapshot.entries[index].imageLocalPath)
+                if imageReference != snapshot.entries[index].imageLocalPath {
+                    snapshot.entries[index].imageLocalPath = imageReference
+                    result.recordMigratedReference()
+                }
 
+                if let thumbnailLocalPath = snapshot.entries[index].thumbnailLocalPath {
+                    let thumbnailReference = normalizedMediaReference(for: thumbnailLocalPath)
+                    if thumbnailReference != thumbnailLocalPath {
+                        snapshot.entries[index].thumbnailLocalPath = thumbnailReference
+                        result.recordMigratedReference()
+                    }
+                }
+            }
+        }
+    }
+
+    private func referencedMediaFileNames(from entries: [DailyPhotoEntry]) -> Set<String> {
+        Set(entries.flatMap { entry in
+            [entry.imageLocalPath, entry.thumbnailLocalPath].compactMap { reference in
+                reference.map(normalizedMediaReference)
+            }
+        })
+    }
+
+    private func deleteOrphanFiles(referencedFileNames: Set<String>, result: inout MaintenanceResult) {
         do {
             let directory = try baseDirectory()
 
@@ -174,7 +274,7 @@ struct ImageStorageService {
                         continue
                     }
 
-                    guard referencedPaths.contains(fileURL.standardizedFileURL.path) == false else {
+                    guard referencedFileNames.contains(fileURL.lastPathComponent) == false else {
                         continue
                     }
 
@@ -269,13 +369,15 @@ struct ImageStorageService {
         }
     }
 
-    private func standardizedPath(_ path: String) -> String {
-        URL(fileURLWithPath: path).standardizedFileURL.path
+    private func isURL(_ fileURL: URL, containedIn directory: URL) -> Bool {
+        let directoryPath = directory.standardizedFileURL.path
+        let filePath = fileURL.standardizedFileURL.path
+        return filePath == directoryPath || filePath.hasPrefix(directoryPath + "/")
     }
 
     private func baseDirectory() throws -> URL {
-        if let baseDirectoryURL {
-            return baseDirectoryURL
+        if let entriesDirectoryURL {
+            return entriesDirectoryURL
         }
 
         guard let directory = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {

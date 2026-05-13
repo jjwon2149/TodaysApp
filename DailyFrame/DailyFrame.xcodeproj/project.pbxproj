@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		BBD000122FAB900000000001 /* ImageStorageServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBD000112FAB900000000001 /* ImageStorageServiceTests.swift */; };
+		BBD000102FAB900000000001 /* BackupExportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBD0000F2FAB900000000001 /* BackupExportTests.swift */; };
 		BBD000022FAB900000000001 /* StreakServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBD000012FAB900000000001 /* StreakServiceTests.swift */; };
 		C0D690012FAB910000000001 /* DomainTestFixture.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D690112FAB910000000001 /* DomainTestFixture.swift */; };
 		C0D690022FAB910000000001 /* EntryRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D690122FAB910000000001 /* EntryRepositoryTests.swift */; };
@@ -36,6 +37,7 @@
 /* Begin PBXFileReference section */
 		4AF351A92FAB82320053AF89 /* DailyFrame.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DailyFrame.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BBD000112FAB900000000001 /* ImageStorageServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageStorageServiceTests.swift; sourceTree = "<group>"; };
+		BBD0000F2FAB900000000001 /* BackupExportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupExportTests.swift; sourceTree = "<group>"; };
 		BBD000012FAB900000000001 /* StreakServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreakServiceTests.swift; sourceTree = "<group>"; };
 		BBD000032FAB900000000001 /* DailyFrameTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DailyFrameTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		C0D690112FAB910000000001 /* DomainTestFixture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DomainTestFixture.swift; sourceTree = "<group>"; };
@@ -137,6 +139,7 @@
 				C0D690122FAB910000000001 /* EntryRepositoryTests.swift */,
 				C0D690142FAB910000000001 /* HomeProfileStreakContractTests.swift */,
 				C0D690132FAB910000000001 /* MissionServiceTests.swift */,
+				BBD0000F2FAB900000000001 /* BackupExportTests.swift */,
 				BBD000012FAB900000000001 /* StreakServiceTests.swift */,
 			);
 			path = DailyFrameTests;
@@ -299,6 +302,7 @@
 				C0D690022FAB910000000001 /* EntryRepositoryTests.swift in Sources */,
 				C0D690042FAB910000000001 /* HomeProfileStreakContractTests.swift in Sources */,
 				C0D690032FAB910000000001 /* MissionServiceTests.swift in Sources */,
+				BBD000102FAB900000000001 /* BackupExportTests.swift in Sources */,
 				BBD000022FAB900000000001 /* StreakServiceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -110,6 +110,13 @@
 "profile.streak.best" = "Best";
 "profile.streak.freeze" = "Freeze";
 "profile.freeze.notice" = "Most recent Freeze protected %@.";
+"profile.export.title" = "Backup Export";
+"profile.export.subtitle" = "Create a ZIP package with manifest JSON and local images.";
+"profile.export.action" = "Create Export";
+"profile.export.exporting" = "Creating Export...";
+"profile.export.share" = "Share Export File";
+"profile.export.status.ready" = "Export ready: %d entries and %d media files.";
+"profile.export.status.ready_with_warnings" = "Export ready: %d entries and %d media files, with %d warnings in the manifest.";
 "profile.notification.title" = "Daily Reminder";
 "profile.notification.time" = "Reminder Time";
 "profile.notification.status.loading" = "Checking notification status.";
@@ -162,6 +169,7 @@
 "error.calendar.load" = "Could not load calendar entries.";
 "error.entry.delete" = "An error occurred while deleting the entry.";
 "error.profile.stats_load" = "Could not load entry stats.";
+"error.export.archive" = "Could not create the export file.";
 "error.notification.settings_load" = "Could not load notification settings.";
 "error.notification.time_save" = "Could not save the reminder time.";
 "error.notification.enable" = "Could not turn on notifications.";

@@ -6,6 +6,8 @@
 !support.md
 !privacy.md
 !docs/qa-smoke-checklist.md
+!docs/
+!docs/*.md
 
 # Xcode user data
 *.xcuserstate

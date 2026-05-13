@@ -50,8 +50,9 @@ final class EntryEditorViewModel: ObservableObject {
         self.selectedMood = existingEntry?.moodCode
         self.imageSourceType = existingEntry?.sourceType ?? "library"
 
-        if let path = existingEntry?.imageLocalPath {
-            self.previewImage = UIImage(contentsOfFile: path)
+        if let path = existingEntry?.imageLocalPath,
+           let imageURL = imageStorageService.resolvedFileURL(for: path) {
+            self.previewImage = UIImage(contentsOfFile: imageURL.path)
         }
     }
 
@@ -122,21 +123,22 @@ final class EntryEditorViewModel: ObservableObject {
                     imageFileName: fileNames.imageFileName,
                     thumbnailFileName: fileNames.thumbnailFileName
                 )
-                storedPath = storedImage.imageURL.path
-                thumbnailPath = storedImage.thumbnailURL.path
-                createdPaths = [storedImage.imageURL.path, storedImage.thumbnailURL.path]
+                storedPath = try imageStorageService.mediaReference(for: storedImage.imageURL)
+                thumbnailPath = try imageStorageService.mediaReference(for: storedImage.thumbnailURL)
+                createdPaths = [storedPath, thumbnailPath].compactMap { $0 }
             } else if let existingPath = existingEntry?.imageLocalPath {
-                storedPath = existingPath
+                storedPath = imageStorageService.normalizedMediaReference(for: existingPath)
 
                 if let existingThumbnailPath = existingEntry?.thumbnailLocalPath {
-                    thumbnailPath = existingThumbnailPath
+                    thumbnailPath = imageStorageService.normalizedMediaReference(for: existingThumbnailPath)
                 } else {
                     let fileName = imageStorageService.makeThumbnailFileName(localDateString: dayKey)
                     // Legacy thumbnail backfill is opportunistic; memo/mood edits should still save.
-                    if let generatedThumbnailPath = try? imageStorageService.saveThumbnail(
+                    if let generatedThumbnailURL = try? imageStorageService.saveThumbnail(
                         forImageAt: existingPath,
                         fileName: fileName
-                    ).path {
+                    ),
+                       let generatedThumbnailPath = try? imageStorageService.mediaReference(for: generatedThumbnailURL) {
                         thumbnailPath = generatedThumbnailPath
                         createdPaths.append(generatedThumbnailPath)
                     } else {
@@ -235,11 +237,14 @@ final class EntryEditorViewModel: ObservableObject {
     }
 
     private func deleteReplacedImageFiles(newImagePath: String, newThumbnailPath: String?) {
-        let preservedPaths = Set([newImagePath, newThumbnailPath].compactMap { $0 })
+        let preservedFileNames = Set([newImagePath, newThumbnailPath].compactMap { path in
+            path.map { imageStorageService.normalizedMediaReference(for: $0) }
+        })
         var deletedPaths = Set<String>()
 
         for path in [existingEntry?.imageLocalPath, existingEntry?.thumbnailLocalPath].compactMap({ $0 }) {
-            guard preservedPaths.contains(path) == false,
+            let fileName = imageStorageService.normalizedMediaReference(for: path)
+            guard preservedFileNames.contains(fileName) == false,
                   deletedPaths.insert(path).inserted else {
                 continue
             }

@@ -42,6 +42,7 @@ struct ProfileView: View {
                     }
 
                     notificationSettingsSection
+                    exportSection
                 }
                 .padding(AppTheme.Spacing.medium)
             }
@@ -120,6 +121,58 @@ struct ProfileView: View {
                     Text(errorMessage)
                         .font(.system(.footnote, design: .rounded, weight: .medium))
                         .foregroundStyle(AppTheme.Colors.accent)
+                }
+            }
+        }
+    }
+
+    private var exportSection: some View {
+        AppCard {
+            VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
+                HStack(spacing: AppTheme.Spacing.medium) {
+                    Image(systemName: "archivebox.fill")
+                        .foregroundStyle(AppTheme.Colors.accent)
+                        .frame(width: 28)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("profile.export.title")
+                            .font(.system(.body, design: .rounded, weight: .medium))
+
+                        Text("profile.export.subtitle")
+                            .font(.system(.footnote, design: .rounded))
+                            .foregroundStyle(AppTheme.Colors.textSecondary)
+                    }
+                }
+
+                Button {
+                    Task {
+                        await viewModel.exportArchive()
+                    }
+                } label: {
+                    Label(
+                        viewModel.isExportingArchive ? L10n.string("profile.export.exporting") : L10n.string("profile.export.action"),
+                        systemImage: "square.and.arrow.up.on.square.fill"
+                    )
+                    .font(.system(.headline, design: .rounded, weight: .semibold))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(AppTheme.Colors.textPrimary)
+                    .foregroundStyle(Color.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                }
+                .disabled(viewModel.isExportingArchive)
+
+                if let exportStatusMessage = viewModel.exportStatusMessage {
+                    Text(exportStatusMessage)
+                        .font(.system(.footnote, design: .rounded))
+                        .foregroundStyle(AppTheme.Colors.textSecondary)
+                }
+
+                if let exportedArchiveURL = viewModel.exportedArchiveURL {
+                    ShareLink(item: exportedArchiveURL) {
+                        Label("profile.export.share", systemImage: "square.and.arrow.up")
+                            .font(.system(.body, design: .rounded, weight: .semibold))
+                    }
                 }
             }
         }

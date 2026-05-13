@@ -110,6 +110,13 @@
 "profile.streak.best" = "최고";
 "profile.streak.freeze" = "Freeze";
 "profile.freeze.notice" = "최근 %@ 기록을 Freeze로 보호했습니다.";
+"profile.export.title" = "백업 내보내기";
+"profile.export.subtitle" = "manifest JSON과 로컬 이미지를 담은 ZIP 패키지를 만듭니다.";
+"profile.export.action" = "내보내기 생성";
+"profile.export.exporting" = "내보내기 생성 중...";
+"profile.export.share" = "내보내기 파일 공유";
+"profile.export.status.ready" = "내보내기 준비 완료: 기록 %d개, 미디어 파일 %d개.";
+"profile.export.status.ready_with_warnings" = "내보내기 준비 완료: 기록 %d개, 미디어 파일 %d개, manifest 경고 %d개.";
 "profile.notification.title" = "매일 기록 알림";
 "profile.notification.time" = "알림 시간";
 "profile.notification.status.loading" = "알림 상태를 확인하는 중입니다.";
@@ -162,6 +169,7 @@
 "error.calendar.load" = "캘린더 기록을 불러오지 못했습니다.";
 "error.entry.delete" = "기록을 삭제하는 중 오류가 발생했습니다.";
 "error.profile.stats_load" = "기록 통계를 불러오지 못했습니다.";
+"error.export.archive" = "내보내기 파일을 만들지 못했습니다.";
 "error.notification.settings_load" = "알림 설정을 불러오지 못했습니다.";
 "error.notification.time_save" = "알림 시간을 저장하지 못했습니다.";
 "error.notification.enable" = "알림을 켜지 못했습니다.";

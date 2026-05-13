@@ -231,9 +231,11 @@ struct HomeView: View {
 
 private struct EntryImageView: View {
     let imagePath: String
+    private let imageStorageService = ImageStorageService()
 
     var body: some View {
-        if let image = UIImage(contentsOfFile: imagePath) {
+        if let imageURL = imageStorageService.resolvedFileURL(for: imagePath),
+           let image = UIImage(contentsOfFile: imageURL.path) {
             Image(uiImage: image)
                 .resizable()
                 .scaledToFill()

@@ -15,6 +15,9 @@ final class ProfileViewModel: ObservableObject {
     @Published private(set) var notificationStatusMessage = L10n.string("profile.notification.status.loading")
     @Published private(set) var errorMessage: String?
     @Published private(set) var isUpdatingReminder = false
+    @Published private(set) var isExportingArchive = false
+    @Published private(set) var exportedArchiveURL: URL?
+    @Published private(set) var exportStatusMessage: String?
 
     private let entryRepository: EntryRepository
     private let streakService: StreakService
@@ -22,6 +25,7 @@ final class ProfileViewModel: ObservableObject {
     private let appSettingsRepository: AppSettingsRepository
     private let notificationService: NotificationService
     private let dateProvider: DateProvider
+    private let exportService: ExportService
     private var appSettings = AppSettings()
     private var calendar: Calendar
 
@@ -31,6 +35,7 @@ final class ProfileViewModel: ObservableObject {
         streakStateRepository: StreakStateRepository = StreakStateRepository(),
         appSettingsRepository: AppSettingsRepository = AppSettingsRepository(),
         notificationService: NotificationService = NotificationService(),
+        exportService: ExportService = ExportService(),
         dateProvider: DateProvider = DateProvider()
     ) {
         self.entryRepository = entryRepository
@@ -38,6 +43,7 @@ final class ProfileViewModel: ObservableObject {
         self.streakStateRepository = streakStateRepository
         self.appSettingsRepository = appSettingsRepository
         self.notificationService = notificationService
+        self.exportService = exportService
         self.dateProvider = dateProvider
         self.calendar = dateProvider.calendar
         self.reminderTime = Self.date(hour: 21, minute: 0, calendar: dateProvider.calendar, now: dateProvider.currentDate())
@@ -109,6 +115,37 @@ final class ProfileViewModel: ObservableObject {
         }
 
         profileStatsStatusMessage = didFail ? L10n.string("error.profile.stats_load") : nil
+    }
+
+    func exportArchive() async {
+        guard isExportingArchive == false else { return }
+
+        isExportingArchive = true
+        exportedArchiveURL = nil
+        exportStatusMessage = nil
+        defer { isExportingArchive = false }
+
+        do {
+            let result = try await exportService.exportArchive()
+            exportedArchiveURL = result.fileURL
+
+            if result.warningCount > 0 {
+                exportStatusMessage = L10n.format(
+                    "profile.export.status.ready_with_warnings",
+                    result.entryCount,
+                    result.mediaFileCount,
+                    result.warningCount
+                )
+            } else {
+                exportStatusMessage = L10n.format(
+                    "profile.export.status.ready",
+                    result.entryCount,
+                    result.mediaFileCount
+                )
+            }
+        } catch {
+            exportStatusMessage = L10n.string("error.export.archive")
+        }
     }
 
     func setReminderEnabled(_ isEnabled: Bool) async {

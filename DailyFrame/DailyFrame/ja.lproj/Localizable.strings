@@ -110,6 +110,13 @@
 "profile.streak.best" = "最高";
 "profile.streak.freeze" = "Freeze";
 "profile.freeze.notice" = "最近は%@をFreezeで保護しました。";
+"profile.export.title" = "バックアップ書き出し";
+"profile.export.subtitle" = "manifest JSONとローカル画像を含むZIPパッケージを作成します。";
+"profile.export.action" = "書き出しを作成";
+"profile.export.exporting" = "書き出しを作成中...";
+"profile.export.share" = "書き出しファイルを共有";
+"profile.export.status.ready" = "書き出し準備完了: 記録%d件、メディアファイル%d件。";
+"profile.export.status.ready_with_warnings" = "書き出し準備完了: 記録%d件、メディアファイル%d件、manifest警告%d件。";
 "profile.notification.title" = "毎日の記録リマインダー";
 "profile.notification.time" = "通知時刻";
 "profile.notification.status.loading" = "通知状態を確認中です。";
@@ -162,6 +169,7 @@
 "error.calendar.load" = "カレンダーの記録を読み込めませんでした。";
 "error.entry.delete" = "記録の削除中にエラーが発生しました。";
 "error.profile.stats_load" = "記録統計を読み込めませんでした。";
+"error.export.archive" = "書き出しファイルを作成できませんでした。";
 "error.notification.settings_load" = "通知設定を読み込めませんでした。";
 "error.notification.time_save" = "通知時刻を保存できませんでした。";
 "error.notification.enable" = "通知をオンにできませんでした。";
