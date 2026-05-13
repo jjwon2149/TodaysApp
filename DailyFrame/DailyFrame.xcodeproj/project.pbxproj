@@ -7,14 +7,14 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		BBD000122FAB900000000001 /* ImageStorageServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBD000112FAB900000000001 /* ImageStorageServiceTests.swift */; };
-		BBD000102FAB900000000001 /* BackupExportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBD0000F2FAB900000000001 /* BackupExportTests.swift */; };
 		BBD000022FAB900000000001 /* StreakServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBD000012FAB900000000001 /* StreakServiceTests.swift */; };
+		BBD000102FAB900000000001 /* BackupExportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBD0000F2FAB900000000001 /* BackupExportTests.swift */; };
+		BBD000122FAB900000000001 /* ImageStorageServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBD000112FAB900000000001 /* ImageStorageServiceTests.swift */; };
 		C0D690012FAB910000000001 /* DomainTestFixture.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D690112FAB910000000001 /* DomainTestFixture.swift */; };
 		C0D690022FAB910000000001 /* EntryRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D690122FAB910000000001 /* EntryRepositoryTests.swift */; };
 		C0D690032FAB910000000001 /* MissionServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D690132FAB910000000001 /* MissionServiceTests.swift */; };
 		C0D690042FAB910000000001 /* HomeProfileStreakContractTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D690142FAB910000000001 /* HomeProfileStreakContractTests.swift */; };
-		DFA0000C2FB000000000001 /* DailyFrameWidget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = DFA000012FB000000000001 /* DailyFrameWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, CodeSignOnCopy, ); }; };
+		DFA0000C2FB000000000001 /* DailyFrameWidget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = DFA000012FB000000000001 /* DailyFrameWidget.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -34,12 +34,26 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		DFA000072FB000000000001 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				DFA0000C2FB000000000001 /* DailyFrameWidget.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		4AF351A92FAB82320053AF89 /* DailyFrame.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DailyFrame.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		BBD000112FAB900000000001 /* ImageStorageServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageStorageServiceTests.swift; sourceTree = "<group>"; };
-		BBD0000F2FAB900000000001 /* BackupExportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupExportTests.swift; sourceTree = "<group>"; };
 		BBD000012FAB900000000001 /* StreakServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreakServiceTests.swift; sourceTree = "<group>"; };
 		BBD000032FAB900000000001 /* DailyFrameTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DailyFrameTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		BBD0000F2FAB900000000001 /* BackupExportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupExportTests.swift; sourceTree = "<group>"; };
+		BBD000112FAB900000000001 /* ImageStorageServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageStorageServiceTests.swift; sourceTree = "<group>"; };
 		C0D690112FAB910000000001 /* DomainTestFixture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DomainTestFixture.swift; sourceTree = "<group>"; };
 		C0D690122FAB910000000001 /* EntryRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntryRepositoryTests.swift; sourceTree = "<group>"; };
 		C0D690132FAB910000000001 /* MissionServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MissionServiceTests.swift; sourceTree = "<group>"; };
@@ -69,20 +83,6 @@
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
-
-/* Begin PBXCopyFilesBuildPhase section */
-		DFA000072FB000000000001 /* Embed App Extensions */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 13;
-			files = (
-				DFA0000C2FB000000000001 /* DailyFrameWidget.appex in Embed App Extensions */,
-			);
-			name = "Embed App Extensions";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		4AF351A62FAB82320053AF89 /* Frameworks */ = {
@@ -173,6 +173,26 @@
 			productReference = 4AF351A92FAB82320053AF89 /* DailyFrame.app */;
 			productType = "com.apple.product-type.application";
 		};
+		BBD000052FAB900000000001 /* DailyFrameTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BBD0000D2FAB900000000001 /* Build configuration list for PBXNativeTarget "DailyFrameTests" */;
+			buildPhases = (
+				BBD000062FAB900000000001 /* Sources */,
+				BBD000072FAB900000000001 /* Frameworks */,
+				BBD000082FAB900000000001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				BBD0000A2FAB900000000001 /* PBXTargetDependency */,
+			);
+			name = DailyFrameTests;
+			packageProductDependencies = (
+			);
+			productName = DailyFrameTests;
+			productReference = BBD000032FAB900000000001 /* DailyFrameTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		DFA000082FB000000000001 /* DailyFrameWidget */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = DFA0000B2FB000000000001 /* Build configuration list for PBXNativeTarget "DailyFrameWidget" */;
@@ -196,26 +216,6 @@
 			productReference = DFA000012FB000000000001 /* DailyFrameWidget.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
-		BBD000052FAB900000000001 /* DailyFrameTests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = BBD0000D2FAB900000000001 /* Build configuration list for PBXNativeTarget "DailyFrameTests" */;
-			buildPhases = (
-				BBD000062FAB900000000001 /* Sources */,
-				BBD000072FAB900000000001 /* Frameworks */,
-				BBD000082FAB900000000001 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				BBD0000A2FAB900000000001 /* PBXTargetDependency */,
-			);
-			name = DailyFrameTests;
-			packageProductDependencies = (
-			);
-			productName = DailyFrameTests;
-			productReference = BBD000032FAB900000000001 /* DailyFrameTests.xctest */;
-			productType = "com.apple.product-type.bundle.unit-test";
-		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -229,12 +229,12 @@
 					4AF351A82FAB82320053AF89 = {
 						CreatedOnToolsVersion = 16.4;
 					};
-					DFA000082FB000000000001 = {
-						CreatedOnToolsVersion = 16.4;
-					};
 					BBD000052FAB900000000001 = {
 						CreatedOnToolsVersion = 16.4;
 						TestTargetID = 4AF351A82FAB82320053AF89;
+					};
+					DFA000082FB000000000001 = {
+						CreatedOnToolsVersion = 16.4;
 					};
 				};
 			};
@@ -458,11 +458,11 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Config/DailyFrame.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = 2TXBC7N5Q5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = Config/DailyFrame-Info.plist;
+				INFOPLIST_FILE = "Config/DailyFrame-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = DailyFrame;
 				INFOPLIST_KEY_NSCameraUsageDescription = "DailyFrame uses the camera only when you choose to take a photo for today's private entry.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "DailyFrame uses your photo library only when you choose a photo for a private daily entry.";
@@ -475,7 +475,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 1.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mabataki.smithwrld999.DailyFrame;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -495,11 +495,11 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Config/DailyFrame.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = 2TXBC7N5Q5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = Config/DailyFrame-Info.plist;
+				INFOPLIST_FILE = "Config/DailyFrame-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = DailyFrame;
 				INFOPLIST_KEY_NSCameraUsageDescription = "DailyFrame uses the camera only when you choose to take a photo for today's private entry.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "DailyFrame uses your photo library only when you choose a photo for a private daily entry.";
@@ -512,73 +512,9 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 1.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mabataki.smithwrld999.DailyFrame;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
-				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
-			};
-			name = Release;
-		};
-		DFA000092FB000000000001 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
-				APPLICATION_EXTENSION_API_ONLY = YES;
-				CODE_SIGN_ENTITLEMENTS = Config/DailyFrameWidget.entitlements;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
-				DEVELOPMENT_TEAM = 2TXBC7N5Q5;
-				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = Config/DailyFrameWidget-Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				MARKETING_VERSION = 1.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.mabataki.smithwrld999.DailyFrame.Widget;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
-				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
-			};
-			name = Debug;
-		};
-		DFA0000A2FB000000000001 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
-				APPLICATION_EXTENSION_API_ONLY = YES;
-				CODE_SIGN_ENTITLEMENTS = Config/DailyFrameWidget.entitlements;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
-				DEVELOPMENT_TEAM = 2TXBC7N5Q5;
-				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = Config/DailyFrameWidget-Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				MARKETING_VERSION = 1.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.mabataki.smithwrld999.DailyFrame.Widget;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
@@ -634,6 +570,70 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DailyFrame.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/DailyFrame";
+			};
+			name = Release;
+		};
+		DFA000092FB000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = Config/DailyFrameWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = 2TXBC7N5Q5;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "Config/DailyFrameWidget-Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mabataki.smithwrld999.DailyFrame.Widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		DFA0000A2FB000000000001 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = Config/DailyFrameWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = 2TXBC7N5Q5;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "Config/DailyFrameWidget-Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mabataki.smithwrld999.DailyFrame.Widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
