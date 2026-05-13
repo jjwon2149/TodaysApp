@@ -11,19 +11,23 @@ final class HomeViewModel: ObservableObject {
     @Published private(set) var monthEntryCount = 0
     @Published private(set) var currentMonthDayCount = 30
     @Published private(set) var todayMission: DailyMission?
+    @Published private(set) var latestFreezeUsage: StreakFreezeUsage?
 
     private let entryRepository: EntryRepository
     private let streakService: StreakService
     private let missionService: MissionService
+    private let dateProvider: DateProvider
 
     init(
         entryRepository: EntryRepository = EntryRepository(),
         streakService: StreakService = StreakService(),
-        missionService: MissionService = MissionService()
+        missionService: MissionService = MissionService(),
+        dateProvider: DateProvider = DateProvider()
     ) {
         self.entryRepository = entryRepository
         self.streakService = streakService
         self.missionService = missionService
+        self.dateProvider = dateProvider
     }
 
     var monthProgressText: String {
@@ -42,6 +46,17 @@ final class HomeViewModel: ObservableObject {
 
     var streakSummaryText: String {
         L10n.format("home.streak.summary", longestStreak, freezeCount)
+    }
+
+    var freezeNoticeText: String? {
+        guard let latestFreezeUsage else {
+            return nil
+        }
+
+        let dateString = DailyFrameDateFormatter.localDateDisplayString(
+            from: latestFreezeUsage.protectedLocalDateString
+        )
+        return L10n.format("home.freeze.notice", dateString)
     }
 
     var missionTitle: String {
@@ -77,7 +92,7 @@ final class HomeViewModel: ObservableObject {
 
     private func loadTodayEntry() async {
         do {
-            todayEntry = try await entryRepository.fetchEntry(for: DailyFrameDateFormatter.localDateString(from: .now))
+            todayEntry = try await entryRepository.fetchEntry(for: dateProvider.localDateStringForNow())
         } catch {
             todayEntry = nil
         }
@@ -94,20 +109,22 @@ final class HomeViewModel: ObservableObject {
 
     private func loadStreak() async {
         do {
-            let state = try await streakService.evaluateMissedYesterdayIfNeeded()
+            let state = try await streakService.evaluateMissedYesterdayIfNeeded(now: dateProvider.currentDate())
             currentStreak = state.currentStreak
             longestStreak = state.longestStreak
             freezeCount = state.freezeCount
+            latestFreezeUsage = state.latestFreezeUsage
         } catch {
             currentStreak = 0
             longestStreak = 0
             freezeCount = 1
+            latestFreezeUsage = nil
         }
     }
 
     private func loadTodayMission() async {
         do {
-            todayMission = try await missionService.mission(for: DailyFrameDateFormatter.localDateString(from: .now))
+            todayMission = try await missionService.mission(for: dateProvider.localDateStringForNow())
         } catch {
             todayMission = nil
         }
@@ -128,8 +145,8 @@ final class HomeViewModel: ObservableObject {
     }
 
     private func loadMonthStats() async {
-        let now = Date()
-        let monthPrefix = DailyFrameDateFormatter.monthString(from: now)
+        let now = dateProvider.currentDate()
+        let monthPrefix = dateProvider.monthString(from: now)
 
         do {
             let monthEntries = try await entryRepository.fetchEntries(inMonthPrefix: monthPrefix)
@@ -138,6 +155,6 @@ final class HomeViewModel: ObservableObject {
             monthEntryCount = 0
         }
 
-        currentMonthDayCount = Calendar.current.range(of: .day, in: .month, for: now)?.count ?? 30
+        currentMonthDayCount = dateProvider.calendar.range(of: .day, in: .month, for: now)?.count ?? 30
     }
 }

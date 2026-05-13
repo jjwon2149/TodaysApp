@@ -2,9 +2,14 @@ import Foundation
 
 struct MissionService {
     private let repository: MissionRepository
+    private let dateProvider: DateProvider
 
-    init(repository: MissionRepository = MissionRepository()) {
+    init(
+        repository: MissionRepository = MissionRepository(),
+        dateProvider: DateProvider = DateProvider()
+    ) {
         self.repository = repository
+        self.dateProvider = dateProvider
     }
 
     func mission(for localDateString: String) async throws -> DailyMission {
@@ -21,7 +26,7 @@ struct MissionService {
         var mission = try await mission(for: localDateString)
 
         if mission.isCompleted == false {
-            mission.completedAtUTC = .now
+            mission.completedAtUTC = dateProvider.currentDate()
             try await repository.upsert(mission)
         }
 
@@ -38,7 +43,8 @@ struct MissionService {
             title: template.titleKey,
             prompt: template.promptKey,
             category: template.categoryKey,
-            symbolName: template.symbolName
+            symbolName: template.symbolName,
+            createdAtUTC: dateProvider.currentDate()
         )
     }
 

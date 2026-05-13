@@ -1,12 +1,12 @@
 import Foundation
 
 enum DailyFrameDateFormatter {
-    static func localDateString(from date: Date) -> String {
-        fixedFormatter("yyyy-MM-dd").string(from: date)
+    static func localDateString(from date: Date, timeZone: TimeZone = .current) -> String {
+        fixedFormatter("yyyy-MM-dd", timeZone: timeZone).string(from: date)
     }
 
-    static func monthString(from date: Date) -> String {
-        fixedFormatter("yyyy-MM").string(from: date)
+    static func monthString(from date: Date, timeZone: TimeZone = .current) -> String {
+        fixedFormatter("yyyy-MM", timeZone: timeZone).string(from: date)
     }
 
     static func monthDisplayString(from date: Date) -> String {
@@ -21,15 +21,15 @@ enum DailyFrameDateFormatter {
         return displayFormatter(L10n.string("date.format.full")).string(from: date)
     }
 
-    static func date(from localDateString: String) -> Date? {
-        fixedFormatter("yyyy-MM-dd").date(from: localDateString)
+    static func date(from localDateString: String, timeZone: TimeZone = .current) -> Date? {
+        fixedFormatter("yyyy-MM-dd", timeZone: timeZone).date(from: localDateString)
     }
 
-    private static func fixedFormatter(_ format: String) -> DateFormatter {
+    private static func fixedFormatter(_ format: String, timeZone: TimeZone) -> DateFormatter {
         let formatter = DateFormatter()
         formatter.calendar = Calendar(identifier: .gregorian)
         formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = .current
+        formatter.timeZone = timeZone
         formatter.dateFormat = format
         return formatter
     }

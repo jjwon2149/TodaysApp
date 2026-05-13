@@ -2,6 +2,7 @@
 "common.complete" = "完了";
 "common.days_count" = "%d日";
 "common.edit" = "編集";
+"common.freezes_count" = "%d個";
 "common.incomplete" = "未完了";
 "common.ok" = "OK";
 "common.open_settings" = "設定を開く";
@@ -18,6 +19,7 @@
 "home.header.streak_empty" = "今日の一枚から記録を始めましょう";
 "home.streak.title" = "%d日ストリーク";
 "home.streak.summary" = "最高%d日・Freezeを%d個保有";
+"home.freeze.notice" = "%@をFreezeで保護しました。";
 "home.mission.default_title" = "今日のミッション";
 "home.mission.default_prompt" = "今日を代表する場面を一枚残しましょう。";
 "home.mission.completed" = "今日の一枚でミッションを達成しました。";
@@ -106,6 +108,8 @@
 "profile.total_entries" = "これまでに%d日分を記録しました";
 "profile.streak.current" = "現在";
 "profile.streak.best" = "最高";
+"profile.streak.freeze" = "Freeze";
+"profile.freeze.notice" = "最近は%@をFreezeで保護しました。";
 "profile.notification.title" = "毎日の記録リマインダー";
 "profile.notification.time" = "通知時刻";
 "profile.notification.status.loading" = "通知状態を確認中です。";

@@ -2,6 +2,7 @@
 "common.complete" = "완료";
 "common.days_count" = "%d일";
 "common.edit" = "수정";
+"common.freezes_count" = "%d개";
 "common.incomplete" = "미완료";
 "common.ok" = "확인";
 "common.open_settings" = "설정으로 이동";
@@ -18,6 +19,7 @@
 "home.header.streak_empty" = "오늘 한 장으로 기록을 시작해보세요";
 "home.streak.title" = "%d일 스트릭";
 "home.streak.summary" = "최고 %d일 · Freeze %d개 보유";
+"home.freeze.notice" = "%@ 기록을 Freeze로 보호했습니다.";
 "home.mission.default_title" = "오늘의 미션";
 "home.mission.default_prompt" = "오늘을 대표하는 장면을 한 장 남겨보세요.";
 "home.mission.completed" = "오늘의 한 장으로 미션을 완료했습니다.";
@@ -106,6 +108,8 @@
 "profile.total_entries" = "지금까지 %d일을 남겼습니다";
 "profile.streak.current" = "현재";
 "profile.streak.best" = "최고";
+"profile.streak.freeze" = "Freeze";
+"profile.freeze.notice" = "최근 %@ 기록을 Freeze로 보호했습니다.";
 "profile.notification.title" = "매일 기록 알림";
 "profile.notification.time" = "알림 시간";
 "profile.notification.status.loading" = "알림 상태를 확인하는 중입니다.";

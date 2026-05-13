@@ -2,6 +2,7 @@
 "common.complete" = "Complete";
 "common.days_count" = "%d days";
 "common.edit" = "Edit";
+"common.freezes_count" = "%d Freezes";
 "common.incomplete" = "Incomplete";
 "common.ok" = "OK";
 "common.open_settings" = "Open Settings";
@@ -18,6 +19,7 @@
 "home.header.streak_empty" = "Start your record with one photo today";
 "home.streak.title" = "%d-day streak";
 "home.streak.summary" = "Best %d days - %d Freezes available";
+"home.freeze.notice" = "Freeze protected %@.";
 "home.mission.default_title" = "Today's Mission";
 "home.mission.default_prompt" = "Save one photo that represents today.";
 "home.mission.completed" = "You completed the mission with today's photo.";
@@ -106,6 +108,8 @@
 "profile.total_entries" = "You have saved %d days so far";
 "profile.streak.current" = "Current";
 "profile.streak.best" = "Best";
+"profile.streak.freeze" = "Freeze";
+"profile.freeze.notice" = "Most recent Freeze protected %@.";
 "profile.notification.title" = "Daily Reminder";
 "profile.notification.time" = "Reminder Time";
 "profile.notification.status.loading" = "Checking notification status.";

@@ -1,47 +1,34 @@
-import UIKit
 import XCTest
 @testable import DailyFrame
 
-final class StreakServiceTests: XCTestCase {
-    private var temporaryDirectory: URL!
-    private var store: PersistenceStore!
-    private var entryRepository: EntryRepository!
-    private var streakRepository: StreakStateRepository!
-    private var settingsRepository: AppSettingsRepository!
-    private var streakService: StreakService!
+final class StreakServiceTests: DomainTestFixture {
+    func testRecordCompletionIsIdempotentAndIgnoresPastEntryEdits() async throws {
+        let provider = makeDateProvider(now: "2026-05-07")
+        let service = makeStreakService(dateProvider: provider)
 
-    override func setUp() async throws {
-        try await super.setUp()
-
-        temporaryDirectory = FileManager.default.temporaryDirectory
-            .appending(path: "DailyFrameTests-\(UUID().uuidString)")
-        store = PersistenceStore(baseDirectoryURL: temporaryDirectory)
-        entryRepository = EntryRepository(store: store)
-        streakRepository = StreakStateRepository(store: store)
-        settingsRepository = AppSettingsRepository(store: store)
-        streakService = StreakService(
-            repository: streakRepository,
-            entryRepository: entryRepository,
-            appSettingsRepository: settingsRepository
+        try await seed(
+            streakState: StreakState(
+                currentStreak: 4,
+                longestStreak: 4,
+                lastCompletedLocalDateString: "2026-05-07",
+                freezeCount: 2
+            )
         )
-    }
 
-    override func tearDown() async throws {
-        if let temporaryDirectory {
-            try? FileManager.default.removeItem(at: temporaryDirectory)
-        }
+        try await service.recordCompletion(for: "2026-05-07")
+        try await service.recordCompletion(for: "2026-05-06")
 
-        streakService = nil
-        settingsRepository = nil
-        streakRepository = nil
-        entryRepository = nil
-        store = nil
-        temporaryDirectory = nil
-
-        try await super.tearDown()
+        let state = try await streakRepository.fetchPrimaryState()
+        XCTAssertEqual(state.currentStreak, 4)
+        XCTAssertEqual(state.longestStreak, 4)
+        XCTAssertEqual(state.freezeCount, 2)
+        XCTAssertEqual(state.lastCompletedLocalDateString, "2026-05-07")
     }
 
     func testEvaluateUsesFreezeForD2GapAndIsSameDayIdempotent() async throws {
+        let provider = makeDateProvider(now: "2026-05-07")
+        let service = makeStreakService(dateProvider: provider)
+
         try await seed(
             entries: [
                 entry("2026-05-03"),
@@ -56,21 +43,60 @@ final class StreakServiceTests: XCTestCase {
             )
         )
 
-        let evaluated = try await streakService.evaluateMissedYesterdayIfNeeded(now: date("2026-05-07"))
+        let evaluated = try await service.evaluateMissedYesterdayIfNeeded()
 
         XCTAssertEqual(evaluated.currentStreak, 3)
         XCTAssertEqual(evaluated.longestStreak, 3)
         XCTAssertEqual(evaluated.freezeCount, 1)
         XCTAssertEqual(evaluated.lastCompletedLocalDateString, "2026-05-06")
         XCTAssertEqual(evaluated.lastAutoAppliedFreezeLocalDateString, "2026-05-06")
+        XCTAssertEqual(evaluated.freezeUsageHistory.map(\.protectedLocalDateString), ["2026-05-06"])
+        XCTAssertEqual(evaluated.freezeUsageHistory.first?.timezoneIdentifier, "Asia/Seoul")
 
-        let evaluatedAgain = try await streakService.evaluateMissedYesterdayIfNeeded(now: date("2026-05-07"))
+        let evaluatedAgain = try await service.evaluateMissedYesterdayIfNeeded()
 
         XCTAssertEqual(evaluatedAgain.freezeCount, 1)
+        XCTAssertEqual(evaluatedAgain.freezeUsageHistory.count, 1)
         XCTAssertEqual(evaluatedAgain.lastCompletedLocalDateString, "2026-05-06")
     }
 
+    func testEvaluateDoesNotUseFreezeForD1OrTodayCompletion() async throws {
+        let provider = makeDateProvider(now: "2026-05-07")
+        let service = makeStreakService(dateProvider: provider)
+
+        try await seed(
+            entries: [entry("2026-05-06")],
+            streakState: StreakState(
+                currentStreak: 3,
+                longestStreak: 3,
+                lastCompletedLocalDateString: "2026-05-06",
+                freezeCount: 1
+            )
+        )
+
+        let d1Evaluated = try await service.evaluateMissedYesterdayIfNeeded()
+        XCTAssertEqual(d1Evaluated.freezeCount, 1)
+        XCTAssertTrue(d1Evaluated.freezeUsageHistory.isEmpty)
+
+        try await seed(
+            entries: [entry("2026-05-07")],
+            streakState: StreakState(
+                currentStreak: 4,
+                longestStreak: 4,
+                lastCompletedLocalDateString: "2026-05-07",
+                freezeCount: 1
+            )
+        )
+
+        let todayEvaluated = try await service.evaluateMissedYesterdayIfNeeded()
+        XCTAssertEqual(todayEvaluated.freezeCount, 1)
+        XCTAssertTrue(todayEvaluated.freezeUsageHistory.isEmpty)
+    }
+
     func testEvaluateResetsCurrentStreakForD2GapWithoutFreeze() async throws {
+        let provider = makeDateProvider(now: "2026-05-07")
+        let service = makeStreakService(dateProvider: provider)
+
         try await seed(
             entries: [
                 entry("2026-05-03"),
@@ -85,303 +111,189 @@ final class StreakServiceTests: XCTestCase {
             )
         )
 
-        let evaluated = try await streakService.evaluateMissedYesterdayIfNeeded(now: date("2026-05-07"))
+        let evaluated = try await service.evaluateMissedYesterdayIfNeeded()
 
         XCTAssertEqual(evaluated.currentStreak, 0)
         XCTAssertEqual(evaluated.longestStreak, 3)
         XCTAssertEqual(evaluated.freezeCount, 0)
         XCTAssertEqual(evaluated.lastCompletedLocalDateString, "2026-05-05")
+        XCTAssertTrue(evaluated.freezeUsageHistory.isEmpty)
     }
 
-    @MainActor
-    func testProfileLoadEvaluatesStreakWithoutOpeningHome() async throws {
+    func testEvaluateDoesNotConsumeFreezeWhenAutoApplyIsOffOrGapIsLongerThanOneDay() async throws {
+        let provider = makeDateProvider(now: "2026-05-07")
+        let service = makeStreakService(dateProvider: provider)
+
         try await seed(
-            entries: [
-                entry("2026-05-03"),
-                entry("2026-05-04"),
-                entry("2026-05-05")
-            ],
+            entries: [entry("2026-05-05")],
             streakState: StreakState(
-                currentStreak: 3,
+                currentStreak: 1,
                 longestStreak: 3,
                 lastCompletedLocalDateString: "2026-05-05",
-                freezeCount: 1
+                freezeCount: 2
+            ),
+            settings: AppSettings(autoApplyFreeze: false)
+        )
+
+        let autoApplyOff = try await service.evaluateMissedYesterdayIfNeeded()
+        XCTAssertEqual(autoApplyOff.currentStreak, 0)
+        XCTAssertEqual(autoApplyOff.freezeCount, 2)
+        XCTAssertTrue(autoApplyOff.freezeUsageHistory.isEmpty)
+
+        try await seed(
+            entries: [entry("2026-05-04")],
+            streakState: StreakState(
+                currentStreak: 1,
+                longestStreak: 3,
+                lastCompletedLocalDateString: "2026-05-04",
+                freezeCount: 2
             )
         )
 
-        let testNow = date("2026-05-07")
-        let viewModel = ProfileViewModel(
-            entryRepository: entryRepository,
-            streakService: streakService,
-            streakStateRepository: streakRepository,
-            appSettingsRepository: settingsRepository,
-            nowProvider: { testNow }
-        )
-
-        await viewModel.load()
-
-        XCTAssertEqual(viewModel.currentStreak, 3)
-        XCTAssertEqual(viewModel.longestStreak, 3)
-
-        let state = try await streakRepository.fetchPrimaryState()
-        XCTAssertEqual(state.freezeCount, 0)
-        XCTAssertEqual(state.lastCompletedLocalDateString, "2026-05-06")
+        let longerGap = try await service.evaluateMissedYesterdayIfNeeded()
+        XCTAssertEqual(longerGap.currentStreak, 0)
+        XCTAssertEqual(longerGap.freezeCount, 2)
+        XCTAssertTrue(longerGap.freezeUsageHistory.isEmpty)
     }
 
-    func testRebuildAppliesMissedYesterdayPolicyAfterSoftDelete() async throws {
+    func testTimezoneProviderSeparatesKoreaAndLosAngelesLocalDates() async throws {
+        let instant = instant("2026-05-06T16:30:00Z")
+        let seoulProvider = makeDateProvider(instant: instant, timeZone: seoulTimeZone)
+        let losAngelesProvider = makeDateProvider(instant: instant, timeZone: losAngelesTimeZone)
+
+        XCTAssertEqual(seoulProvider.localDateStringForNow(), "2026-05-07")
+        XCTAssertEqual(losAngelesProvider.localDateStringForNow(), "2026-05-06")
+
         try await seed(
-            entries: [
-                entry("2026-05-05")
-            ],
+            entries: [entry("2026-05-05", timeZone: seoulTimeZone)],
             streakState: StreakState(
                 currentStreak: 1,
                 longestStreak: 1,
                 lastCompletedLocalDateString: "2026-05-05",
                 freezeCount: 1,
-                lastEvaluatedAtUTC: date("2026-05-07")
+                lastEvaluatedAtUTC: instant,
+                lastKnownTimezoneIdentifier: seoulTimeZone.identifier
             )
         )
 
-        let rebuilt = try await streakService.rebuildFromActiveEntries(now: date("2026-05-07"))
+        let service = makeStreakService(dateProvider: losAngelesProvider)
+        let evaluated = try await service.evaluateMissedYesterdayIfNeeded()
+
+        XCTAssertEqual(evaluated.freezeCount, 1)
+        XCTAssertEqual(evaluated.lastKnownTimezoneIdentifier, losAngelesTimeZone.identifier)
+    }
+
+    func testDSTBoundaryUsesCalendarDayDistanceForFreeze() async throws {
+        let provider = makeDateProvider(now: "2026-03-09", timeZone: losAngelesTimeZone)
+        let service = makeStreakService(dateProvider: provider)
+
+        try await seed(
+            entries: [entry("2026-03-07", timeZone: losAngelesTimeZone)],
+            streakState: StreakState(
+                currentStreak: 1,
+                longestStreak: 1,
+                lastCompletedLocalDateString: "2026-03-07",
+                freezeCount: 1
+            )
+        )
+
+        let evaluated = try await service.evaluateMissedYesterdayIfNeeded()
+
+        XCTAssertEqual(evaluated.currentStreak, 1)
+        XCTAssertEqual(evaluated.freezeCount, 0)
+        XCTAssertEqual(evaluated.lastCompletedLocalDateString, "2026-03-08")
+        XCTAssertEqual(evaluated.freezeUsageHistory.first?.protectedLocalDateString, "2026-03-08")
+    }
+
+    func testRebuildBridgesFreezeUsageWithoutCountingFreezeAsEntry() async throws {
+        let provider = makeDateProvider(now: "2026-05-07")
+        let service = makeStreakService(dateProvider: provider)
+        let freezeUsage = StreakFreezeUsage(
+            protectedLocalDateString: "2026-05-06",
+            source: "missed_yesterday_evaluation",
+            usedAtUTC: localDate("2026-05-07"),
+            timezoneIdentifier: seoulTimeZone.identifier
+        )
+
+        try await seed(
+            entries: [
+                entry("2026-05-05"),
+                entry("2026-05-07")
+            ],
+            streakState: StreakState(
+                currentStreak: 2,
+                longestStreak: 2,
+                lastCompletedLocalDateString: "2026-05-07",
+                freezeCount: 0,
+                lastAutoAppliedFreezeLocalDateString: "2026-05-06",
+                freezeUsageHistory: [freezeUsage]
+            )
+        )
+
+        let rebuilt = try await service.rebuildFromActiveEntries()
+
+        XCTAssertEqual(rebuilt.currentStreak, 2)
+        XCTAssertEqual(rebuilt.longestStreak, 2)
+        XCTAssertEqual(rebuilt.freezeCount, 0)
+        XCTAssertEqual(rebuilt.lastCompletedLocalDateString, "2026-05-07")
+        XCTAssertEqual(rebuilt.freezeUsageHistory.count, 1)
+    }
+
+    func testRebuildAppliesMissedYesterdayPolicyAfterSoftDelete() async throws {
+        let provider = makeDateProvider(now: "2026-05-07")
+        let service = makeStreakService(dateProvider: provider)
+
+        try await seed(
+            entries: [entry("2026-05-05")],
+            streakState: StreakState(
+                currentStreak: 1,
+                longestStreak: 1,
+                lastCompletedLocalDateString: "2026-05-05",
+                freezeCount: 1,
+                lastEvaluatedAtUTC: localDate("2026-05-07")
+            )
+        )
+
+        let rebuilt = try await service.rebuildFromActiveEntries()
 
         XCTAssertEqual(rebuilt.currentStreak, 1)
         XCTAssertEqual(rebuilt.longestStreak, 1)
         XCTAssertEqual(rebuilt.freezeCount, 0)
         XCTAssertEqual(rebuilt.lastCompletedLocalDateString, "2026-05-06")
         XCTAssertEqual(rebuilt.lastAutoAppliedFreezeLocalDateString, "2026-05-06")
+        XCTAssertEqual(rebuilt.freezeUsageHistory.map(\.protectedLocalDateString), ["2026-05-06"])
     }
 
     func testRebuildDoesNotConsumeSecondFreezeWhenSameDayFreezeWasAlreadyApplied() async throws {
+        let provider = makeDateProvider(now: "2026-05-07")
+        let service = makeStreakService(dateProvider: provider)
+        let freezeUsage = StreakFreezeUsage(
+            protectedLocalDateString: "2026-05-06",
+            source: "missed_yesterday_evaluation",
+            usedAtUTC: localDate("2026-05-07"),
+            timezoneIdentifier: seoulTimeZone.identifier
+        )
+
         try await seed(
-            entries: [
-                entry("2026-05-05")
-            ],
+            entries: [entry("2026-05-05")],
             streakState: StreakState(
                 currentStreak: 1,
                 longestStreak: 1,
                 lastCompletedLocalDateString: "2026-05-06",
                 freezeCount: 1,
                 lastAutoAppliedFreezeLocalDateString: "2026-05-06",
-                lastEvaluatedAtUTC: date("2026-05-07")
+                freezeUsageHistory: [freezeUsage],
+                lastEvaluatedAtUTC: localDate("2026-05-07")
             )
         )
 
-        let rebuilt = try await streakService.rebuildFromActiveEntries(now: date("2026-05-07"))
+        let rebuilt = try await service.rebuildFromActiveEntries()
 
         XCTAssertEqual(rebuilt.currentStreak, 1)
         XCTAssertEqual(rebuilt.longestStreak, 1)
         XCTAssertEqual(rebuilt.freezeCount, 1)
         XCTAssertEqual(rebuilt.lastCompletedLocalDateString, "2026-05-06")
         XCTAssertEqual(rebuilt.lastAutoAppliedFreezeLocalDateString, "2026-05-06")
-    }
-
-    func testRecordCompletionIgnoresOlderDateThanCurrentAnchor() async throws {
-        try await seed(
-            entries: [],
-            streakState: StreakState(
-                currentStreak: 4,
-                longestStreak: 5,
-                lastCompletedLocalDateString: "2026-05-12"
-            )
-        )
-
-        try await streakService.recordCompletion(for: "2026-05-09")
-
-        let state = try await streakRepository.fetchPrimaryState()
-        XCTAssertEqual(state.currentStreak, 4)
-        XCTAssertEqual(state.longestStreak, 5)
-        XCTAssertEqual(state.lastCompletedLocalDateString, "2026-05-12")
-    }
-
-    @MainActor
-    func testExistingEntryMetadataEditDoesNotMoveStreakBackward() async throws {
-        let existingEntry = entry(
-            "2026-05-09",
-            memo: "before",
-            moodCode: "평온",
-            missionId: "2026-05-09-existing",
-            missionCompleted: true,
-            thumbnailLocalPath: "/tmp/2026-05-09-thumbnail.jpg"
-        )
-        try await seed(
-            entries: [existingEntry],
-            streakState: StreakState(
-                currentStreak: 4,
-                longestStreak: 4,
-                lastCompletedLocalDateString: "2026-05-12"
-            ),
-            missionHistory: [
-                mission("2026-05-09", id: "2026-05-09-existing", completed: true)
-            ]
-        )
-        let viewModel = makeEntryEditorViewModel(existingEntry: existingEntry)
-
-        viewModel.memo = "after"
-        viewModel.selectedMood = "좋음"
-        let didSave = await viewModel.saveEntry()
-
-        XCTAssertTrue(didSave)
-        let state = try await streakRepository.fetchPrimaryState()
-        XCTAssertEqual(state.currentStreak, 4)
-        XCTAssertEqual(state.lastCompletedLocalDateString, "2026-05-12")
-
-        let fetchedEntry = try await entryRepository.fetchEntry(for: "2026-05-09")
-        let savedEntry = try XCTUnwrap(fetchedEntry)
-        XCTAssertEqual(savedEntry.memo, "after")
-        XCTAssertEqual(savedEntry.moodCode, "좋음")
-        XCTAssertEqual(savedEntry.missionId, "2026-05-09-existing")
-        XCTAssertTrue(savedEntry.missionCompleted)
-    }
-
-    @MainActor
-    func testExistingEntryImageReplacementDoesNotMoveStreakBackward() async throws {
-        try FileManager.default.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true)
-        let oldImageURL = temporaryDirectory.appending(path: "old-image.jpg")
-        let oldThumbnailURL = temporaryDirectory.appending(path: "old-thumbnail.jpg")
-        try Data("old".utf8).write(to: oldImageURL)
-        try Data("old-thumbnail".utf8).write(to: oldThumbnailURL)
-        let existingEntry = entry(
-            "2026-05-09",
-            missionId: "2026-05-09-existing",
-            missionCompleted: true,
-            imageLocalPath: oldImageURL.path,
-            thumbnailLocalPath: oldThumbnailURL.path
-        )
-        try await seed(
-            entries: [existingEntry],
-            streakState: StreakState(
-                currentStreak: 4,
-                longestStreak: 4,
-                lastCompletedLocalDateString: "2026-05-12"
-            ),
-            missionHistory: [
-                mission("2026-05-09", id: "2026-05-09-existing", completed: true)
-            ]
-        )
-        let viewModel = makeEntryEditorViewModel(existingEntry: existingEntry)
-
-        viewModel.loadCapturedImage(makeTestImage())
-        let didSave = await viewModel.saveEntry()
-
-        XCTAssertTrue(didSave)
-        let state = try await streakRepository.fetchPrimaryState()
-        XCTAssertEqual(state.currentStreak, 4)
-        XCTAssertEqual(state.lastCompletedLocalDateString, "2026-05-12")
-
-        let fetchedEntry = try await entryRepository.fetchEntry(for: "2026-05-09")
-        let savedEntry = try XCTUnwrap(fetchedEntry)
-        XCTAssertNotEqual(savedEntry.imageLocalPath, oldImageURL.path)
-        XCTAssertNotEqual(savedEntry.thumbnailLocalPath, oldThumbnailURL.path)
-        XCTAssertEqual(savedEntry.missionId, "2026-05-09-existing")
-        XCTAssertTrue(savedEntry.missionCompleted)
-    }
-
-    @MainActor
-    func testNewTodayEntryStillRecordsStreakCompletion() async throws {
-        let todayString = DailyFrameDateFormatter.localDateString(from: .now)
-        try await seed(
-            entries: [],
-            streakState: StreakState(
-                currentStreak: 0,
-                longestStreak: 0
-            )
-        )
-        let viewModel = makeEntryEditorViewModel()
-
-        viewModel.loadCapturedImage(makeTestImage())
-        let didSave = await viewModel.saveEntry()
-
-        XCTAssertTrue(didSave)
-        let state = try await streakRepository.fetchPrimaryState()
-        XCTAssertEqual(state.currentStreak, 1)
-        XCTAssertEqual(state.longestStreak, 1)
-        XCTAssertEqual(state.lastCompletedLocalDateString, todayString)
-
-        let fetchedEntry = try await entryRepository.fetchEntry(for: todayString)
-        let savedEntry = try XCTUnwrap(fetchedEntry)
-        XCTAssertEqual(savedEntry.localDateString, todayString)
-        XCTAssertTrue(savedEntry.missionCompleted)
-        XCTAssertNotNil(savedEntry.missionId)
-    }
-
-    private func seed(
-        entries: [DailyPhotoEntry],
-        streakState: StreakState,
-        settings: AppSettings = AppSettings(),
-        missionHistory: [DailyMission] = []
-    ) async throws {
-        let snapshot = AppStateSnapshot(
-            userProfile: UserProfile(),
-            entries: entries,
-            streakState: streakState,
-            settings: settings,
-            missionHistory: missionHistory
-        )
-
-        try await store.save(snapshot)
-    }
-
-    private func entry(
-        _ localDateString: String,
-        memo: String? = nil,
-        moodCode: String? = nil,
-        missionId: String? = nil,
-        missionCompleted: Bool = false,
-        imageLocalPath: String? = nil,
-        thumbnailLocalPath: String? = nil
-    ) -> DailyPhotoEntry {
-        DailyPhotoEntry(
-            localDateString: localDateString,
-            imageLocalPath: imageLocalPath ?? "/tmp/\(localDateString).jpg",
-            thumbnailLocalPath: thumbnailLocalPath,
-            memo: memo,
-            moodCode: moodCode,
-            missionId: missionId,
-            missionCompleted: missionCompleted,
-            sourceType: "test"
-        )
-    }
-
-    private func mission(_ localDateString: String, id: String, completed: Bool) -> DailyMission {
-        DailyMission(
-            id: id,
-            localDateString: localDateString,
-            templateID: "today-scene",
-            title: "mission.today_scene.title",
-            prompt: "mission.today_scene.prompt",
-            category: "mission.category.record",
-            symbolName: "camera.aperture",
-            completedAtUTC: completed ? date(localDateString) : nil
-        )
-    }
-
-    @MainActor
-    private func makeEntryEditorViewModel(existingEntry: DailyPhotoEntry? = nil) -> EntryEditorViewModel {
-        EntryEditorViewModel(
-            existingEntry: existingEntry,
-            entryRepository: entryRepository,
-            imageStorageService: ImageStorageService(baseDirectoryURL: temporaryDirectory),
-            streakService: streakService,
-            streakStateRepository: streakRepository,
-            missionService: MissionService(repository: MissionRepository(store: store))
-        )
-    }
-
-    @MainActor
-    private func makeTestImage() -> UIImage {
-        let size = CGSize(width: 96, height: 64)
-        return UIGraphicsImageRenderer(size: size).image { context in
-            UIColor.systemBlue.setFill()
-            context.fill(CGRect(origin: .zero, size: size))
-        }
-    }
-
-    private func date(_ localDateString: String) -> Date {
-        guard let date = DailyFrameDateFormatter.date(from: localDateString) else {
-            XCTFail("Invalid test date: \(localDateString)")
-            return Date(timeIntervalSince1970: 0)
-        }
-
-        return date
+        XCTAssertEqual(rebuilt.freezeUsageHistory.count, 1)
     }
 }

@@ -7,6 +7,8 @@ final class ProfileViewModel: ObservableObject {
     @Published private(set) var totalEntryCount = 0
     @Published private(set) var currentStreak = 0
     @Published private(set) var longestStreak = 0
+    @Published private(set) var freezeCount = 1
+    @Published private(set) var latestFreezeUsage: StreakFreezeUsage?
     @Published private(set) var profileStatsStatusMessage: String?
     @Published private(set) var reminderEnabled = false
     @Published private(set) var reminderTime: Date
@@ -19,7 +21,7 @@ final class ProfileViewModel: ObservableObject {
     private let streakStateRepository: StreakStateRepository
     private let appSettingsRepository: AppSettingsRepository
     private let notificationService: NotificationService
-    private let nowProvider: () -> Date
+    private let dateProvider: DateProvider
     private var appSettings = AppSettings()
     private var calendar: Calendar
 
@@ -29,17 +31,16 @@ final class ProfileViewModel: ObservableObject {
         streakStateRepository: StreakStateRepository = StreakStateRepository(),
         appSettingsRepository: AppSettingsRepository = AppSettingsRepository(),
         notificationService: NotificationService = NotificationService(),
-        calendar: Calendar = .current,
-        nowProvider: @escaping () -> Date = { .now }
+        dateProvider: DateProvider = DateProvider()
     ) {
         self.entryRepository = entryRepository
         self.streakService = streakService
         self.streakStateRepository = streakStateRepository
         self.appSettingsRepository = appSettingsRepository
         self.notificationService = notificationService
-        self.nowProvider = nowProvider
-        self.calendar = calendar
-        self.reminderTime = Self.date(hour: 21, minute: 0, calendar: calendar, now: nowProvider())
+        self.dateProvider = dateProvider
+        self.calendar = dateProvider.calendar
+        self.reminderTime = Self.date(hour: 21, minute: 0, calendar: dateProvider.calendar, now: dateProvider.currentDate())
     }
 
     var totalEntriesText: String {
@@ -52,6 +53,21 @@ final class ProfileViewModel: ObservableObject {
 
     var longestStreakText: String {
         L10n.format("common.days_count", longestStreak)
+    }
+
+    var freezeCountText: String {
+        L10n.format("common.freezes_count", freezeCount)
+    }
+
+    var freezeNoticeText: String? {
+        guard let latestFreezeUsage else {
+            return nil
+        }
+
+        let dateString = DailyFrameDateFormatter.localDateDisplayString(
+            from: latestFreezeUsage.protectedLocalDateString
+        )
+        return L10n.format("profile.freeze.notice", dateString)
     }
 
     func load() async {
@@ -78,13 +94,17 @@ final class ProfileViewModel: ObservableObject {
         }
 
         do {
-            _ = try await streakService.evaluateMissedYesterdayIfNeeded(now: nowProvider())
+            _ = try await streakService.evaluateMissedYesterdayIfNeeded(now: dateProvider.currentDate())
             let state = try await streakStateRepository.fetchPrimaryState()
             currentStreak = max(state.currentStreak, 0)
             longestStreak = max(state.longestStreak, 0)
+            freezeCount = max(state.freezeCount, 0)
+            latestFreezeUsage = state.latestFreezeUsage
         } catch {
             currentStreak = 0
             longestStreak = 0
+            freezeCount = 1
+            latestFreezeUsage = nil
             didFail = true
         }
 
@@ -119,7 +139,7 @@ final class ProfileViewModel: ObservableObject {
             hour: components.hour,
             minute: components.minute,
             calendar: calendar,
-            now: nowProvider()
+            now: dateProvider.currentDate()
         )
 
         do {
@@ -254,7 +274,7 @@ final class ProfileViewModel: ObservableObject {
             hour: settings.reminderHour ?? 21,
             minute: settings.reminderMinute ?? 0,
             calendar: calendar,
-            now: nowProvider()
+            now: dateProvider.currentDate()
         )
     }
 

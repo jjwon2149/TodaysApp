@@ -64,6 +64,12 @@ struct HomeView: View {
                     Text(viewModel.streakSummaryText)
                         .font(.system(.subheadline, design: .rounded))
                         .foregroundStyle(AppTheme.Colors.textSecondary)
+
+                    if let freezeNoticeText = viewModel.freezeNoticeText {
+                        Text(freezeNoticeText)
+                            .font(.system(.footnote, design: .rounded, weight: .medium))
+                            .foregroundStyle(AppTheme.Colors.accent)
+                    }
                 }
 
                 Spacer()

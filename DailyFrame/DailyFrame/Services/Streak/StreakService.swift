@@ -4,21 +4,25 @@ struct StreakService {
     private let repository: StreakStateRepository
     private let entryRepository: EntryRepository
     private let appSettingsRepository: AppSettingsRepository
+    private let dateProvider: DateProvider
 
     init(
         repository: StreakStateRepository = StreakStateRepository(),
         entryRepository: EntryRepository = EntryRepository(),
-        appSettingsRepository: AppSettingsRepository = AppSettingsRepository()
+        appSettingsRepository: AppSettingsRepository = AppSettingsRepository(),
+        dateProvider: DateProvider = DateProvider()
     ) {
         self.repository = repository
         self.entryRepository = entryRepository
         self.appSettingsRepository = appSettingsRepository
+        self.dateProvider = dateProvider
     }
 
     func recordCompletion(for localDateString: String) async throws {
         var state = try await repository.fetchPrimaryState()
 
-        if state.lastCompletedLocalDateString == localDateString {
+        if let lastCompleted = state.lastCompletedLocalDateString,
+           dateProvider.isAfter(localDateString, lastCompleted) == false {
             return
         }
 
@@ -32,9 +36,7 @@ struct StreakService {
         let nextStreak: Int
 
         if let lastCompleted = state.lastCompletedLocalDateString,
-           let lastDate = DailyFrameDateFormatter.date(from: lastCompleted),
-           let currentDate = DailyFrameDateFormatter.date(from: localDateString),
-           Calendar.current.dateComponents([.day], from: lastDate, to: currentDate).day == 1 {
+           dateProvider.dayDistance(from: lastCompleted, to: localDateString) == 1 {
             nextStreak = state.currentStreak + 1
         } else {
             nextStreak = 1
@@ -43,31 +45,37 @@ struct StreakService {
         state.currentStreak = nextStreak
         state.longestStreak = max(state.longestStreak, nextStreak)
         state.lastCompletedLocalDateString = localDateString
-        state.lastEvaluatedAtUTC = .now
-        state.lastKnownTimezoneIdentifier = TimeZone.current.identifier
+        markEvaluated(&state, now: dateProvider.currentDate())
 
         try await repository.save(state)
     }
 
-    func evaluateMissedYesterdayIfNeeded(now: Date = .now) async throws -> StreakState {
+    func evaluateMissedYesterdayIfNeeded(now: Date? = nil) async throws -> StreakState {
+        let now = now ?? dateProvider.currentDate()
         var state = try await repository.fetchPrimaryState()
-        let todayString = DailyFrameDateFormatter.localDateString(from: now)
+        let todayString = dateProvider.localDateString(from: now)
 
         if wasAlreadyEvaluatedToday(state: state, todayString: todayString) {
             return state
         }
 
-        state = try await evaluatedMissedYesterdayState(from: state, now: now)
+        state = try await evaluatedMissedYesterdayState(
+            from: state,
+            now: now,
+            freezeUsageSource: "missed_yesterday_evaluation"
+        )
         try await repository.save(state)
         return state
     }
 
     @discardableResult
-    func rebuildFromActiveEntries(now: Date = .now) async throws -> StreakState {
+    func rebuildFromActiveEntries(now: Date? = nil) async throws -> StreakState {
+        let now = now ?? dateProvider.currentDate()
         let entries = try await entryRepository.fetchAllActiveEntries()
         let orderedDateStrings = entries.map(\.localDateString).sorted()
         let activeDateStrings = Set(orderedDateStrings)
         var state = try await repository.fetchPrimaryState()
+        migrateLegacyFreezeMarkerIfNeeded(in: &state, now: now)
 
         if let freezeDateString = state.lastAutoAppliedFreezeLocalDateString,
            activeDateStrings.contains(freezeDateString) {
@@ -79,53 +87,71 @@ struct StreakService {
             state.longestStreak = 0
             state.lastCompletedLocalDateString = nil
             state.lastAutoAppliedFreezeLocalDateString = nil
-            state = try await evaluatedMissedYesterdayState(from: state, now: now)
+            state = try await evaluatedMissedYesterdayState(
+                from: state,
+                now: now,
+                freezeUsageSource: "rebuild"
+            )
             try await repository.save(state)
             return state
         }
 
-        var previousDate: Date?
+        let protectedDateStrings = protectedFreezeDateStrings(
+            in: state,
+            excluding: activeDateStrings
+        )
+        let orderedTimelineDateStrings = Array(activeDateStrings.union(protectedDateStrings)).sorted()
+
+        var previousDateString: String?
         var currentRun = 0
         var longestRun = 0
-        var lastValidDateString: String?
+        var lastCompletedDateString: String?
 
-        for dateString in orderedDateStrings {
-            guard let date = DailyFrameDateFormatter.date(from: dateString) else {
+        for dateString in orderedTimelineDateStrings {
+            guard dateProvider.date(from: dateString) != nil else {
                 continue
             }
 
-            if let previousDate,
-               Calendar.current.dateComponents([.day], from: previousDate, to: date).day == 1 {
-                currentRun += 1
-            } else {
-                currentRun = 1
+            if let previousDateString,
+               dateProvider.dayDistance(from: previousDateString, to: dateString) != 1 {
+                currentRun = 0
             }
 
-            longestRun = max(longestRun, currentRun)
-            previousDate = date
-            lastValidDateString = dateString
+            if activeDateStrings.contains(dateString) {
+                currentRun += 1
+                longestRun = max(longestRun, currentRun)
+            }
+
+            previousDateString = dateString
+            lastCompletedDateString = dateString
         }
 
         state.currentStreak = currentRun
         state.longestStreak = longestRun
-        state.lastCompletedLocalDateString = lastValidDateString
-        state = try await evaluatedMissedYesterdayState(from: state, now: now)
+        state.lastCompletedLocalDateString = lastCompletedDateString
+        state = try await evaluatedMissedYesterdayState(
+            from: state,
+            now: now,
+            freezeUsageSource: "rebuild"
+        )
 
         try await repository.save(state)
         return state
     }
 
-    private func evaluatedMissedYesterdayState(from initialState: StreakState, now: Date) async throws -> StreakState {
+    private func evaluatedMissedYesterdayState(
+        from initialState: StreakState,
+        now: Date,
+        freezeUsageSource: String
+    ) async throws -> StreakState {
         var state = initialState
-        let todayString = DailyFrameDateFormatter.localDateString(from: now)
+        migrateLegacyFreezeMarkerIfNeeded(in: &state, now: now)
+        let todayString = dateProvider.localDateString(from: now)
 
-        guard let todayDate = DailyFrameDateFormatter.date(from: todayString),
-              let yesterdayDate = Calendar.current.date(byAdding: .day, value: -1, to: todayDate) else {
+        guard let yesterdayString = dateProvider.localDateString(byAddingDays: -1, to: todayString) else {
             markEvaluated(&state, now: now)
             return state
         }
-
-        let yesterdayString = DailyFrameDateFormatter.localDateString(from: yesterdayDate)
 
         if state.lastCompletedLocalDateString == todayString || state.lastCompletedLocalDateString == yesterdayString {
             markEvaluated(&state, now: now)
@@ -141,19 +167,14 @@ struct StreakService {
         }
 
         guard let lastCompletedString = state.lastCompletedLocalDateString,
-              let lastCompletedDate = DailyFrameDateFormatter.date(from: lastCompletedString),
-              let daysSinceLastCompletion = Calendar.current.dateComponents(
-                [.day],
-                from: lastCompletedDate,
-                to: todayDate
-              ).day,
+              let daysSinceLastCompletion = dateProvider.dayDistance(from: lastCompletedString, to: todayString),
               daysSinceLastCompletion > 1 else {
             markEvaluated(&state, now: now)
             return state
         }
 
         let settings = try await appSettingsRepository.fetchSettings()
-        let alreadyAppliedFreezeForYesterday = state.lastAutoAppliedFreezeLocalDateString == yesterdayString
+        let alreadyAppliedFreezeForYesterday = hasFreezeUsage(in: state, for: yesterdayString)
 
         if alreadyAppliedFreezeForYesterday,
            daysSinceLastCompletion == 2 {
@@ -164,6 +185,12 @@ struct StreakService {
             state.freezeCount -= 1
             state.lastCompletedLocalDateString = yesterdayString
             state.lastAutoAppliedFreezeLocalDateString = yesterdayString
+            appendFreezeUsage(
+                for: yesterdayString,
+                to: &state,
+                source: freezeUsageSource,
+                now: now
+            )
         } else {
             state.currentStreak = 0
             if alreadyAppliedFreezeForYesterday {
@@ -176,15 +203,79 @@ struct StreakService {
     }
 
     private func wasAlreadyEvaluatedToday(state: StreakState, todayString: String) -> Bool {
+        guard state.lastKnownTimezoneIdentifier == dateProvider.timezoneIdentifier else {
+            return false
+        }
+
         guard let lastEvaluatedAtUTC = state.lastEvaluatedAtUTC else {
             return false
         }
 
-        return DailyFrameDateFormatter.localDateString(from: lastEvaluatedAtUTC) == todayString
+        return dateProvider.localDateString(from: lastEvaluatedAtUTC) == todayString
     }
 
     private func markEvaluated(_ state: inout StreakState, now: Date) {
         state.lastEvaluatedAtUTC = now
-        state.lastKnownTimezoneIdentifier = TimeZone.current.identifier
+        state.lastKnownTimezoneIdentifier = dateProvider.timezoneIdentifier
+    }
+
+    private func migrateLegacyFreezeMarkerIfNeeded(in state: inout StreakState, now: Date) {
+        guard let freezeDateString = state.lastAutoAppliedFreezeLocalDateString,
+              state.freezeUsageHistory.contains(where: {
+                $0.protectedLocalDateString == freezeDateString
+              }) == false else {
+            return
+        }
+
+        appendFreezeUsage(
+            for: freezeDateString,
+            to: &state,
+            source: "legacy_marker_migration",
+            now: now
+        )
+    }
+
+    private func protectedFreezeDateStrings(
+        in state: StreakState,
+        excluding activeDateStrings: Set<String>
+    ) -> Set<String> {
+        var protectedDateStrings = Set(
+            state.freezeUsageHistory.map(\.protectedLocalDateString)
+        )
+
+        if let freezeDateString = state.lastAutoAppliedFreezeLocalDateString {
+            protectedDateStrings.insert(freezeDateString)
+        }
+
+        return protectedDateStrings.subtracting(activeDateStrings)
+    }
+
+    private func hasFreezeUsage(in state: StreakState, for protectedLocalDateString: String) -> Bool {
+        state.lastAutoAppliedFreezeLocalDateString == protectedLocalDateString
+            || state.freezeUsageHistory.contains {
+                $0.protectedLocalDateString == protectedLocalDateString
+            }
+    }
+
+    private func appendFreezeUsage(
+        for protectedLocalDateString: String,
+        to state: inout StreakState,
+        source: String,
+        now: Date
+    ) {
+        guard state.freezeUsageHistory.contains(where: {
+            $0.protectedLocalDateString == protectedLocalDateString
+        }) == false else {
+            return
+        }
+
+        state.freezeUsageHistory.append(
+            StreakFreezeUsage(
+                protectedLocalDateString: protectedLocalDateString,
+                source: source,
+                usedAtUTC: now,
+                timezoneIdentifier: dateProvider.timezoneIdentifier
+            )
+        )
     }
 }

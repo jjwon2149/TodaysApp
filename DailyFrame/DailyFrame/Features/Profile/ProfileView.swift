@@ -24,9 +24,21 @@ struct ProfileView: View {
                         }
                     }
 
-                    HStack(spacing: AppTheme.Spacing.medium) {
+                    LazyVGrid(
+                        columns: [GridItem(.adaptive(minimum: 96), spacing: AppTheme.Spacing.medium)],
+                        spacing: AppTheme.Spacing.medium
+                    ) {
                         summaryCard(title: L10n.string("profile.streak.current"), value: viewModel.currentStreakText)
                         summaryCard(title: L10n.string("profile.streak.best"), value: viewModel.longestStreakText)
+                        summaryCard(title: L10n.string("profile.streak.freeze"), value: viewModel.freezeCountText)
+                    }
+
+                    if let freezeNoticeText = viewModel.freezeNoticeText {
+                        AppCard {
+                            Text(freezeNoticeText)
+                                .font(.system(.subheadline, design: .rounded, weight: .medium))
+                                .foregroundStyle(AppTheme.Colors.accent)
+                        }
                     }
 
                     notificationSettingsSection
