@@ -1,3 +1,3 @@
-NSCameraUsageDescription = "今日の瞬間を撮影するためにカメラへのアクセスが必要です。";
-NSPhotoLibraryUsageDescription = "今日の写真をアルバムから選ぶためにフォトライブラリへのアクセスが必要です。";
+NSCameraUsageDescription = "DailyFrameは、今日の非公開記録用に写真を撮影するときだけカメラへのアクセスを使用します。";
+NSPhotoLibraryUsageDescription = "DailyFrameは、非公開の日々の記録に使う写真を選ぶときだけフォトライブラリへのアクセスを使用します。";
 CFBundleDisplayName = "DailyFrame";

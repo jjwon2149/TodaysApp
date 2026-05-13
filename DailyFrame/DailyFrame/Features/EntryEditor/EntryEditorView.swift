@@ -7,6 +7,7 @@ struct EntryEditorView: View {
     let completionActionTitle: String
     let onSaved: () async -> Void
 
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel: EntryEditorViewModel
     @State private var selectedPhotoItem: PhotosPickerItem?
@@ -105,11 +106,12 @@ struct EntryEditorView: View {
                             .font(.system(.headline, design: .rounded, weight: .semibold))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 18)
-                            .background(isCameraAvailable ? AppTheme.Colors.accent : AppTheme.Colors.muted)
-                            .foregroundStyle(isCameraAvailable ? Color.white : AppTheme.Colors.textSecondary)
+                            .background(isCameraAvailable ? AppTheme.Colors.accentFill : AppTheme.Colors.muted)
+                            .foregroundStyle(isCameraAvailable ? AppTheme.Colors.onAccent : AppTheme.Colors.textSecondary)
                             .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
                     }
                     .disabled(isCameraAvailable == false || viewModel.isSaving)
+                    .accessibilityHint(Text(isCameraAvailable ? L10n.string("editor.camera.accessibility_hint") : L10n.string("editor.camera.unavailable.accessibility_hint")))
 
                     PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
                         Label(existingEntry == nil ? L10n.string("editor.photo.pick") : L10n.string("editor.photo.repick"), systemImage: "photo.stack")
@@ -121,12 +123,14 @@ struct EntryEditorView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
                     }
                     .disabled(viewModel.isSaving)
+                    .accessibilityHint(Text("editor.photo.pick.accessibility_hint"))
                 }
 
                 if isCameraAvailable == false {
                     Text("error.camera.unavailable")
                         .font(.system(.footnote, design: .rounded))
                         .foregroundStyle(AppTheme.Colors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
         }
@@ -175,6 +179,8 @@ struct EntryEditorView: View {
             RoundedRectangle(cornerRadius: 24, style: .continuous)
                 .stroke(emptyPhotoStroke, lineWidth: viewModel.hasPhoto ? 0 : 1)
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(L10n.string(viewModel.hasPhoto ? "editor.photo.preview.accessibility_label" : "editor.photo.empty.accessibility_label")))
     }
 
     private var savingOverlay: some View {
@@ -230,6 +236,8 @@ struct EntryEditorView: View {
                     .background(AppTheme.Colors.muted)
                     .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
                     .disabled(viewModel.isSaving)
+                    .accessibilityLabel(Text("editor.memo.accessibility_label"))
+                    .accessibilityHint(Text("editor.memo.accessibility_hint"))
             }
         }
     }
@@ -240,7 +248,7 @@ struct EntryEditorView: View {
                 Text("editor.mood.title")
                     .font(.system(.headline, design: .rounded, weight: .semibold))
 
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 2), spacing: 10) {
+                LazyVGrid(columns: moodColumns, spacing: 10) {
                     ForEach(viewModel.moodOptions) { mood in
                         Button {
                             viewModel.selectedMood = mood.id
@@ -249,11 +257,14 @@ struct EntryEditorView: View {
                                 .font(.system(.subheadline, design: .rounded, weight: .semibold))
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 16)
-                                .background(viewModel.selectedMood == mood.id ? AppTheme.Colors.accent : AppTheme.Colors.muted)
-                                .foregroundStyle(viewModel.selectedMood == mood.id ? Color.white : AppTheme.Colors.textPrimary)
+                                .background(viewModel.selectedMood == mood.id ? AppTheme.Colors.accentFill : AppTheme.Colors.muted)
+                                .foregroundStyle(viewModel.selectedMood == mood.id ? AppTheme.Colors.onAccent : AppTheme.Colors.textPrimary)
                                 .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
                         }
                         .disabled(viewModel.isSaving)
+                        .accessibilityLabel(Text(mood.title))
+                        .accessibilityValue(Text(viewModel.selectedMood == mood.id ? L10n.string("editor.mood.selected.accessibility_value") : ""))
+                        .accessibilityHint(Text("editor.mood.option.accessibility_hint"))
                     }
                 }
             }
@@ -318,6 +329,10 @@ struct EntryEditorView: View {
         )
     }
 
+    private var moodColumns: [GridItem] {
+        Array(repeating: GridItem(.flexible(), spacing: 10), count: dynamicTypeSize.isAccessibilitySize ? 1 : 2)
+    }
+
     private var saveSection: some View {
         Button {
             guard isSaveButtonDisabled == false else { return }
@@ -331,19 +346,23 @@ struct EntryEditorView: View {
             HStack {
                 if viewModel.isSaving {
                     ProgressView()
-                        .tint(.white)
+                        .tint(AppTheme.Colors.onAccent)
                 }
 
                 Text(viewModel.isSaving ? L10n.string("editor.saving") : viewModel.saveButtonTitle)
                     .font(.system(.headline, design: .rounded, weight: .semibold))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 18)
-            .background(AppTheme.Colors.accent)
-            .foregroundStyle(Color.white)
+            .background(AppTheme.Colors.accentFill)
+            .foregroundStyle(AppTheme.Colors.onAccent)
             .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         }
         .disabled(isSaveButtonDisabled)
+        .accessibilityLabel(Text(viewModel.isSaving ? L10n.string("editor.saving") : viewModel.saveButtonTitle))
+        .accessibilityHint(Text("editor.save.accessibility_hint"))
     }
 
     private var isSaveButtonDisabled: Bool {
@@ -446,6 +465,8 @@ private struct KeyboardDismissTapHandler: UIViewRepresentable {
 }
 
 private struct EntryCompletionView: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
     let summary: EntryCompletionSummary
     let actionTitle: String
     let isActionDisabled: Bool
@@ -523,7 +544,7 @@ private struct EntryCompletionView: View {
             HStack(spacing: AppTheme.Spacing.small) {
                 if isActionInFlight {
                     ProgressView()
-                        .tint(.white)
+                        .tint(AppTheme.Colors.onAccent)
                 } else {
                     Image(systemName: "house.fill")
                 }
@@ -534,31 +555,53 @@ private struct EntryCompletionView: View {
             .frame(maxWidth: .infinity)
             .padding(.vertical, 18)
             .background(isActionDisabled ? AppTheme.Colors.muted : AppTheme.Colors.accent)
-            .foregroundStyle(isActionDisabled ? AppTheme.Colors.textSecondary : Color.white)
+            .foregroundStyle(isActionDisabled ? AppTheme.Colors.textSecondary : AppTheme.Colors.onAccent)
             .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         }
         .disabled(isActionDisabled)
+        .accessibilityHint(Text("editor.completion.action.accessibility_hint"))
     }
 
     private func completionRow(title: String, value: String, symbol: String, tint: Color) -> some View {
-        HStack(spacing: AppTheme.Spacing.medium) {
-            Image(systemName: symbol)
-                .font(.system(.headline, design: .rounded, weight: .bold))
-                .foregroundStyle(tint)
-                .frame(width: 28)
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.system(.subheadline, design: .rounded, weight: .semibold))
-                    .foregroundStyle(AppTheme.Colors.textPrimary)
-                    .lineLimit(2)
-
-                Text(value)
-                    .font(.system(.headline, design: .rounded, weight: .bold))
-                    .foregroundStyle(AppTheme.Colors.textPrimary)
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
+                    completionSymbol(symbol: symbol, tint: tint)
+                    completionText(title: title, value: value)
+                }
+            } else {
+                HStack(spacing: AppTheme.Spacing.medium) {
+                    completionSymbol(symbol: symbol, tint: tint)
+                    completionText(title: title, value: value)
+                    Spacer(minLength: AppTheme.Spacing.small)
+                }
             }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(title))
+        .accessibilityValue(Text(value))
+    }
 
-            Spacer(minLength: AppTheme.Spacing.small)
+    private func completionSymbol(symbol: String, tint: Color) -> some View {
+        Image(systemName: symbol)
+            .font(.system(.headline, design: .rounded, weight: .bold))
+            .foregroundStyle(tint)
+            .frame(width: 28)
+            .accessibilityHidden(true)
+    }
+
+    private func completionText(title: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                .foregroundStyle(AppTheme.Colors.textPrimary)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Text(value)
+                .font(.system(.headline, design: .rounded, weight: .bold))
+                .foregroundStyle(AppTheme.Colors.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 }

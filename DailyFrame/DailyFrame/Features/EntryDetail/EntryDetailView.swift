@@ -2,6 +2,7 @@ import SwiftUI
 import UIKit
 
 struct EntryDetailView: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.dismiss) private var dismiss
 
     @State private var entry: DailyPhotoEntry
@@ -39,6 +40,7 @@ struct EntryDetailView: View {
                     isPresentingEditor = true
                 }
                 .font(.system(.body, design: .rounded, weight: .semibold))
+                .accessibilityHint(Text("entry.detail.edit.accessibility_hint"))
             }
         }
         .sheet(isPresented: $isPresentingEditor) {
@@ -76,6 +78,9 @@ struct EntryDetailView: View {
             EntryDetailImageView(imagePath: entry.imageLocalPath)
                 .frame(height: 360)
                 .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(Text("entry.detail.photo.accessibility_label"))
+                .accessibilityValue(Text(DailyFrameDateFormatter.localDateDisplayString(from: entry.localDateString)))
         }
     }
 
@@ -90,10 +95,12 @@ struct EntryDetailView: View {
                     Text(memo)
                         .font(.system(.body, design: .rounded))
                         .foregroundStyle(AppTheme.Colors.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
                 } else {
                     Text("entry.memo.empty")
                         .font(.system(.body, design: .rounded))
                         .foregroundStyle(AppTheme.Colors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
         }
@@ -119,6 +126,7 @@ struct EntryDetailView: View {
                 Text("entry.manage.subtitle")
                     .font(.system(.subheadline, design: .rounded))
                     .foregroundStyle(AppTheme.Colors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 Button(role: .destructive) {
                     isConfirmingDelete = true
@@ -128,10 +136,11 @@ struct EntryDetailView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
                         .background(AppTheme.Colors.muted)
-                        .foregroundStyle(Color.red)
+                        .foregroundStyle(Color(uiColor: .systemRed))
                         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
                 }
                 .disabled(isDeleting)
+                .accessibilityHint(Text("entry.delete.accessibility_hint"))
             }
         }
     }
@@ -148,21 +157,55 @@ struct EntryDetailView: View {
     }
 
     private func detailRow(title: String, value: String, symbol: String) -> some View {
-        HStack(spacing: AppTheme.Spacing.medium) {
-            Image(systemName: symbol)
-                .font(.system(.body, design: .rounded, weight: .semibold))
-                .foregroundStyle(AppTheme.Colors.accent)
-                .frame(width: 28)
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
+                    detailRowIcon(symbol: symbol)
+                    detailRowText(title: title, value: value)
+                }
+            } else {
+                HStack(spacing: AppTheme.Spacing.medium) {
+                    detailRowIcon(symbol: symbol)
 
+                    Text(title)
+                        .font(.system(.body, design: .rounded, weight: .semibold))
+                        .foregroundStyle(AppTheme.Colors.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Spacer()
+
+                    Text(value)
+                        .font(.system(.subheadline, design: .rounded))
+                        .foregroundStyle(AppTheme.Colors.textSecondary)
+                        .multilineTextAlignment(.trailing)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(title))
+        .accessibilityValue(Text(value))
+    }
+
+    private func detailRowIcon(symbol: String) -> some View {
+        Image(systemName: symbol)
+            .font(.system(.body, design: .rounded, weight: .semibold))
+            .foregroundStyle(AppTheme.Colors.accent)
+            .frame(width: 28)
+            .accessibilityHidden(true)
+    }
+
+    private func detailRowText(title: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
             Text(title)
                 .font(.system(.body, design: .rounded, weight: .semibold))
                 .foregroundStyle(AppTheme.Colors.textPrimary)
-
-            Spacer()
+                .fixedSize(horizontal: false, vertical: true)
 
             Text(value)
                 .font(.system(.subheadline, design: .rounded))
                 .foregroundStyle(AppTheme.Colors.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -202,15 +245,9 @@ struct EntryDetailView: View {
 
 private struct EntryDetailImageView: View {
     let imagePath: String
-    private let imageStorageService = ImageStorageService()
 
     var body: some View {
-        if let imageURL = imageStorageService.resolvedFileURL(for: imagePath),
-           let image = UIImage(contentsOfFile: imageURL.path) {
-            Image(uiImage: image)
-                .resizable()
-                .scaledToFill()
-        } else {
+        LocalImageView(imagePath: imagePath) {
             RoundedRectangle(cornerRadius: 24, style: .continuous)
                 .fill(AppTheme.Colors.muted)
                 .overlay {

@@ -20,19 +20,28 @@
 "home.streak.title" = "%d-day streak";
 "home.streak.summary" = "Best %d days - %d Freezes available";
 "home.freeze.notice" = "Freeze protected %@.";
+"home.streak.accessibility_label" = "Current streak";
+"home.streak.accessibility_value" = "%d days now, best %d days, %d freezes available";
 "home.mission.default_title" = "Today's Mission";
 "home.mission.default_prompt" = "Save one photo that represents today.";
 "home.mission.completed" = "You completed the mission with today's photo.";
 "home.mission.record_button" = "Record with Mission";
+"home.mission.record_button.accessibility_hint" = "Opens the entry editor for today's mission.";
 "home.entry.complete" = "Today's Entry Complete";
 "home.entry.edit_button" = "Edit Today's Entry";
+"home.entry.edit_button.accessibility_hint" = "Opens today's saved entry for editing.";
+"home.entry.photo.accessibility_label" = "Today's entry photo";
 "home.empty.title" = "No photo for today yet";
 "home.empty.subtitle" = "Pick a photo from your library and leave a note.";
 "home.empty.button" = "Add Today's Photo";
+"home.empty.button.accessibility_hint" = "Opens the entry editor to add today's photo.";
+"home.empty.accessibility_label" = "No photo has been saved for today.";
 "home.progress.title" = "This Month's Progress";
 "home.progress.summary" = "This month has %d days, with %d recorded";
+"home.progress.accessibility_value" = "%d of %d days recorded";
 "home.recent.title" = "Recent Entries";
 "home.recent.empty" = "No recent entries yet. Save your first photo today.";
+"home.recent.photo.accessibility_label" = "Recent entry photo";
 
 "calendar.weekday.sun" = "Sun";
 "calendar.weekday.mon" = "Mon";
@@ -47,19 +56,31 @@
 "calendar.accessibility.has_entry" = "Has entry";
 "calendar.accessibility.no_entry" = "No entry";
 "calendar.accessibility.day_status" = "Day %d, %@";
+"calendar.accessibility.today_day_status" = "Day %d, today, %@";
+"calendar.accessibility.open_entry_hint" = "Opens the entry detail.";
+"calendar.previous_month.accessibility_label" = "Previous month";
+"calendar.next_month.accessibility_label" = "Next month";
+"calendar.month_button.accessibility_hint" = "Updates the visible calendar month.";
 
 "editor.title.new" = "Today's Entry";
 "editor.title.edit" = "Edit Entry";
 "editor.error.alert_title" = "Cannot Save";
 "editor.photo.empty" = "Choose today's photo";
 "editor.photo.empty_detail" = "Camera and library are both available before saving.";
+"editor.photo.empty.accessibility_label" = "No photo selected";
+"editor.photo.preview.accessibility_label" = "Selected photo preview";
 "editor.photo.pick" = "Choose from Library";
 "editor.photo.repick" = "Choose Again from Library";
+"editor.photo.pick.accessibility_hint" = "Opens your photo library picker.";
 "editor.camera.unavailable" = "Camera Unavailable";
+"editor.camera.unavailable.accessibility_hint" = "Use the library picker because this device has no available camera.";
 "editor.camera.capture" = "Take Photo";
 "editor.camera.recapture" = "Retake Photo";
+"editor.camera.accessibility_hint" = "Opens the camera. Camera permission is requested only when needed.";
 "editor.memo.title" = "Today's Note";
 "editor.memo.placeholder" = "Why did you choose this photo?";
+"editor.memo.accessibility_label" = "Today's note";
+"editor.memo.accessibility_hint" = "Enter an optional note for this photo.";
 "editor.mood.title" = "Today's Mood";
 "editor.mood.good" = "Good";
 "editor.mood.calm" = "Calm";
@@ -67,8 +88,11 @@
 "editor.mood.excited" = "Excited";
 "editor.mood.mixed" = "Mixed";
 "editor.mood.neutral" = "Neutral";
+"editor.mood.selected.accessibility_value" = "Selected";
+"editor.mood.option.accessibility_hint" = "Sets this as today's mood.";
 "editor.save.new" = "Save Today's Photo";
 "editor.save.edit" = "Save Changes";
+"editor.save.accessibility_hint" = "Saves the selected photo, note, and mood for today.";
 "editor.saving" = "Saving...";
 "editor.status.saving" = "Saving your photo and updating today's entry.";
 "editor.status.photo_ready" = "Photo selected. You can save when the note and mood are ready.";
@@ -85,10 +109,13 @@
 "editor.completion.reward_xp" = "+20 XP";
 "editor.completion.return_first" = "Save one more photo tomorrow to start a 2-day streak.";
 "editor.completion.return_next" = "Save one more photo tomorrow to continue to a %d-day streak.";
+"editor.completion.action.accessibility_hint" = "Closes the completion screen after the entry is saved.";
 
 "entry.memo.empty" = "You recorded only the photo, without a note.";
 "entry.detail.title" = "Entry Detail";
 "entry.detail.return_action" = "Return to Entry";
+"entry.detail.edit.accessibility_hint" = "Opens this entry in edit mode.";
+"entry.detail.photo.accessibility_label" = "Entry photo";
 "entry.detail.mood" = "Mood";
 "entry.detail.mission" = "Mission";
 "entry.detail.source" = "Entry Source";
@@ -98,6 +125,7 @@
 "entry.delete.confirm_title" = "Delete this entry?";
 "entry.delete.confirm_message" = "Deleted entries are hidden from the calendar, and your streak is recalculated from the remaining entries.";
 "entry.delete.action" = "Delete Entry";
+"entry.delete.accessibility_hint" = "Deletes this entry and recalculates the streak from remaining entries.";
 "entry.delete.deleting" = "Deleting...";
 "entry.delete.error_title" = "Cannot Delete";
 "entry.source.library" = "Library";
@@ -115,10 +143,13 @@
 "profile.export.action" = "Create Export";
 "profile.export.exporting" = "Creating Export...";
 "profile.export.share" = "Share Export File";
+"profile.export.accessibility_hint" = "Creates a local export package you can share.";
 "profile.export.status.ready" = "Export ready: %d entries and %d media files.";
 "profile.export.status.ready_with_warnings" = "Export ready: %d entries and %d media files, with %d warnings in the manifest.";
 "profile.notification.title" = "Daily Reminder";
 "profile.notification.time" = "Reminder Time";
+"profile.notification.time.accessibility_hint" = "Sets the daily reminder time.";
+"profile.notification.toggle.accessibility_hint" = "Requests notification permission if needed and schedules or cancels the daily reminder.";
 "profile.notification.status.loading" = "Checking notification status.";
 "profile.notification.status.scheduled" = "We will remind you every day at %@.";
 "profile.notification.status.authorized" = "Notification permission is enabled.";
@@ -126,6 +157,10 @@
 "profile.notification.status.not_determined" = "Turning on reminders will show the permission request.";
 "profile.notification.status.unknown" = "Notification status is currently unavailable.";
 "profile.notification.permission_denied" = "Notifications are turned off. Allow them in iOS Settings to turn reminders back on.";
+"profile.privacy.title" = "Privacy and storage";
+"profile.privacy.local_storage" = "Entries and photos are stored locally on this device.";
+"profile.privacy.permissions" = "Camera and photo library access are requested only when you capture or choose a photo.";
+"profile.privacy.delete" = "Deleting an entry hides it from the archive and removes its stored image files when possible.";
 
 "onboarding.page1.title" = "One photo a day is enough";
 "onboarding.page1.message" = "You do not need to write a lot. Start with one photo that represents today.";
@@ -136,6 +171,9 @@
 "onboarding.start" = "Start";
 "onboarding.next" = "Next";
 "onboarding.skip" = "Explore Later";
+"onboarding.start.accessibility_hint" = "Finishes onboarding and opens DailyFrame.";
+"onboarding.next.accessibility_hint" = "Moves to the next onboarding page.";
+"onboarding.skip.accessibility_hint" = "Skips onboarding and opens DailyFrame.";
 
 "mission.category.record" = "Record";
 "mission.category.observation" = "Observation";

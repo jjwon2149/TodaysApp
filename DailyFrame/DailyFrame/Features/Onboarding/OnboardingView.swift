@@ -3,6 +3,7 @@ import SwiftUI
 struct OnboardingView: View {
     let onStart: () -> Void
 
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var selectedPage = 0
 
     private let pages: [OnboardingPage] = [
@@ -30,33 +31,37 @@ struct OnboardingView: View {
         VStack(spacing: 0) {
             TabView(selection: $selectedPage) {
                 ForEach(Array(pages.enumerated()), id: \.offset) { index, page in
-                    VStack(alignment: .leading, spacing: AppTheme.Spacing.xLarge) {
-                        Spacer(minLength: 24)
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: AppTheme.Spacing.xLarge) {
+                            RoundedRectangle(cornerRadius: 36, style: .continuous)
+                                .fill(page.accent.opacity(0.15))
+                                .overlay {
+                                    Image(systemName: page.symbol)
+                                        .font(.system(size: dynamicTypeSize.isAccessibilitySize ? 42 : 54, weight: .semibold))
+                                        .foregroundStyle(page.accent)
+                                        .accessibilityHidden(true)
+                                }
+                                .frame(height: dynamicTypeSize.isAccessibilitySize ? 180 : 280)
+                                .accessibilityElement(children: .ignore)
+                                .accessibilityLabel(Text(page.title))
 
-                        RoundedRectangle(cornerRadius: 36, style: .continuous)
-                            .fill(page.accent.opacity(0.15))
-                            .overlay {
-                                Image(systemName: page.symbol)
-                                    .font(.system(size: 54, weight: .semibold))
-                                    .foregroundStyle(page.accent)
+                            VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
+                                Text(page.title)
+                                    .font(.system(.largeTitle, design: .rounded, weight: .bold))
+                                    .foregroundStyle(AppTheme.Colors.textPrimary)
+                                    .fixedSize(horizontal: false, vertical: true)
+
+                                Text(page.message)
+                                    .font(.system(.body, design: .rounded))
+                                    .foregroundStyle(AppTheme.Colors.textSecondary)
+                                    .lineSpacing(4)
+                                    .fixedSize(horizontal: false, vertical: true)
                             }
-                            .frame(height: 280)
-
-                        VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
-                            Text(page.title)
-                                .font(.system(.largeTitle, design: .rounded, weight: .bold))
-                                .foregroundStyle(AppTheme.Colors.textPrimary)
-
-                            Text(page.message)
-                                .font(.system(.body, design: .rounded))
-                                .foregroundStyle(AppTheme.Colors.textSecondary)
-                                .lineSpacing(4)
                         }
-
-                        Spacer()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, AppTheme.Spacing.large)
+                        .padding(.vertical, AppTheme.Spacing.xLarge)
                     }
-                    .padding(.horizontal, AppTheme.Spacing.large)
-                    .padding(.vertical, AppTheme.Spacing.xLarge)
                     .tag(index)
                 }
             }
@@ -68,14 +73,16 @@ struct OnboardingView: View {
                         .font(.system(.headline, design: .rounded, weight: .semibold))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 18)
-                        .background(AppTheme.Colors.accent)
-                        .foregroundStyle(Color.white)
+                        .background(AppTheme.Colors.accentFill)
+                        .foregroundStyle(AppTheme.Colors.onAccent)
                         .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
                 }
+                .accessibilityHint(Text(selectedPage == pages.count - 1 ? L10n.string("onboarding.start.accessibility_hint") : L10n.string("onboarding.next.accessibility_hint")))
 
                 Button(L10n.string("onboarding.skip"), action: onStart)
                     .font(.system(.subheadline, design: .rounded, weight: .medium))
                     .foregroundStyle(AppTheme.Colors.textSecondary)
+                    .accessibilityHint(Text("onboarding.skip.accessibility_hint"))
             }
             .padding(AppTheme.Spacing.large)
         }

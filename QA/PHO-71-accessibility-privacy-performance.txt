@@ -1,0 +1,27 @@
+PHO-71 Accessibility, Privacy, and Performance QA
+
+Accessibility
+
+- Confirm the app follows the system appearance in both Light and Dark Mode. There is no app-level forced Light Mode policy.
+- Test Dynamic Type at the largest accessibility size on Home, Calendar, Entry Editor, Entry Detail, Onboarding, and Profile. Primary rows should wrap or stack instead of overlapping.
+- With VoiceOver enabled, confirm Home streak/progress/photo cards announce labels and values, not only decorative icon names.
+- On Calendar, confirm the previous and next month buttons announce their direction and hint, and entry days announce whether a record exists.
+- In Entry Editor, confirm the photo preview/empty state, camera button, library picker, memo field, mood choices, save button, and completion action have meaningful labels or hints.
+
+Privacy
+
+- Camera and photo library permission strings state that access is used only when the user captures or chooses a private daily entry photo.
+- Camera permission is requested from the camera flow only; denied/restricted states show the Settings/Cancel prompt.
+- Profile includes a privacy and storage section describing local storage, permission timing, and deletion behavior.
+
+Performance
+
+- Calendar cells use stored thumbnails when present and fall back to the original image only when needed.
+- Local image rendering for Home, Calendar, and Entry Detail goes through LocalImageView, which decodes files off the main actor and caches decoded images.
+- Launch maintenance still backfills missing thumbnails and deletes unreferenced entry media in the background.
+
+Suggested Regression Pass
+
+- Run unit tests and a simulator build before QA handoff.
+- Populate at least 50 entries with thumbnails, scroll Calendar between several months, and verify no obvious main-thread hitching from image decode.
+- Verify deleting an entry removes it from Calendar and does not leave the detail screen stuck while recalculating streaks.

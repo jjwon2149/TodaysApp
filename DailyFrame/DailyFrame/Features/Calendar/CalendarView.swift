@@ -1,7 +1,8 @@
 import SwiftUI
-import UIKit
 
 struct CalendarView: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
     @StateObject private var viewModel = CalendarViewModel()
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 10), count: 7)
@@ -26,6 +27,7 @@ struct CalendarView: View {
                             Text(viewModel.monthSummary)
                                 .font(.system(.subheadline, design: .rounded))
                                 .foregroundStyle(AppTheme.Colors.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
 
                             HStack(spacing: 10) {
                                 ForEach(weekdaySymbols, id: \.self) { symbol in
@@ -33,6 +35,7 @@ struct CalendarView: View {
                                         .font(.system(.caption, design: .rounded, weight: .bold))
                                         .foregroundStyle(AppTheme.Colors.textSecondary)
                                         .frame(maxWidth: .infinity)
+                                        .accessibilityHidden(true)
                                 }
                             }
 
@@ -52,6 +55,7 @@ struct CalendarView: View {
                                     }
                                 }
                             }
+                            .accessibilityElement(children: .contain)
                         }
                     }
 
@@ -64,6 +68,7 @@ struct CalendarView: View {
                             Text(viewModel.errorMessage ?? L10n.string("calendar.legend.subtitle"))
                                 .font(.system(.subheadline, design: .rounded))
                                 .foregroundStyle(AppTheme.Colors.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
                         }
                     }
                 }
@@ -81,13 +86,32 @@ struct CalendarView: View {
     }
 
     private var headerSection: some View {
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
+                    monthTitle
+                    monthControls
+                }
+            } else {
+                HStack(spacing: AppTheme.Spacing.small) {
+                    monthTitle
+                    Spacer()
+                    monthControls
+                }
+            }
+        }
+    }
+
+    private var monthTitle: some View {
+        Text(viewModel.monthTitle)
+            .font(.system(.title2, design: .rounded, weight: .bold))
+            .foregroundStyle(AppTheme.Colors.textPrimary)
+            .lineLimit(2)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private var monthControls: some View {
         HStack(spacing: AppTheme.Spacing.small) {
-            Text(viewModel.monthTitle)
-                .font(.system(.title2, design: .rounded, weight: .bold))
-                .foregroundStyle(AppTheme.Colors.textPrimary)
-
-            Spacer()
-
             Button {
                 Task {
                     await viewModel.moveMonth(by: -1)
@@ -100,6 +124,8 @@ struct CalendarView: View {
                     .clipShape(Circle())
             }
             .foregroundStyle(AppTheme.Colors.textPrimary)
+            .accessibilityLabel(Text("calendar.previous_month.accessibility_label"))
+            .accessibilityHint(Text("calendar.month_button.accessibility_hint"))
 
             Button {
                 Task {
@@ -113,18 +139,22 @@ struct CalendarView: View {
                     .clipShape(Circle())
             }
             .foregroundStyle(AppTheme.Colors.textPrimary)
+            .accessibilityLabel(Text("calendar.next_month.accessibility_label"))
+            .accessibilityHint(Text("calendar.month_button.accessibility_hint"))
         }
     }
 }
 
 private struct CalendarDayCell: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
     let cell: CalendarViewModel.DayCell
 
     var body: some View {
         if let dayNumber = cell.dayNumber {
             content(dayNumber: dayNumber)
                 .frame(maxWidth: .infinity)
-                .frame(height: 54)
+                .frame(height: dynamicTypeSize.isAccessibilitySize ? 72 : 54)
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 .overlay {
                     if cell.isToday {
@@ -133,9 +163,10 @@ private struct CalendarDayCell: View {
                     }
                 }
                 .accessibilityLabel(accessibilityLabel(dayNumber: dayNumber))
+                .accessibilityHint(cell.hasEntry ? Text("calendar.accessibility.open_entry_hint") : Text(""))
         } else {
             Color.clear
-                .frame(height: 54)
+                .frame(height: dynamicTypeSize.isAccessibilitySize ? 72 : 54)
                 .accessibilityHidden(true)
         }
     }
@@ -158,6 +189,7 @@ private struct CalendarDayCell: View {
                 Text("\(dayNumber)")
                     .font(.system(.caption2, design: .rounded, weight: .bold))
                     .foregroundStyle(Color.white)
+                    .lineLimit(1)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 4)
                     .background(Color.black.opacity(0.34))
@@ -181,6 +213,7 @@ private struct CalendarDayCell: View {
                 Text("\(dayNumber)")
                     .font(.system(.footnote, design: .rounded, weight: .bold))
                     .foregroundStyle(AppTheme.Colors.textPrimary)
+                    .lineLimit(1)
 
                 Circle()
                     .fill(Color.clear)
@@ -193,6 +226,10 @@ private struct CalendarDayCell: View {
 
     private func accessibilityLabel(dayNumber: Int) -> String {
         let status = cell.hasEntry ? L10n.string("calendar.accessibility.has_entry") : L10n.string("calendar.accessibility.no_entry")
+        if cell.isToday {
+            return L10n.format("calendar.accessibility.today_day_status", dayNumber, status)
+        }
+
         return L10n.format("calendar.accessibility.day_status", dayNumber, status)
     }
 }
@@ -200,18 +237,9 @@ private struct CalendarDayCell: View {
 private struct CalendarEntryThumbnailView: View {
     let thumbnailPath: String?
     let imagePath: String
-    private let imageStorageService = ImageStorageService()
 
     var body: some View {
-        if let imageURL = imageStorageService.resolvedThumbnailFileURL(
-            thumbnailReference: thumbnailPath,
-            imageReference: imagePath
-        ),
-           let image = UIImage(contentsOfFile: imageURL.path) {
-            Image(uiImage: image)
-                .resizable()
-                .scaledToFill()
-        } else {
+        LocalImageView(imagePath: thumbnailPath ?? imagePath, fallbackImagePath: imagePath) {
             AppTheme.Colors.secondaryAccent
                 .overlay {
                     Image(systemName: "checkmark")

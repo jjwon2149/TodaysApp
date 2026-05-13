@@ -20,19 +20,28 @@
 "home.streak.title" = "%d日ストリーク";
 "home.streak.summary" = "最高%d日・Freezeを%d個保有";
 "home.freeze.notice" = "%@をFreezeで保護しました。";
+"home.streak.accessibility_label" = "現在のストリーク";
+"home.streak.accessibility_value" = "現在%d日、最高%d日、Freezeを%d個保有";
 "home.mission.default_title" = "今日のミッション";
 "home.mission.default_prompt" = "今日を代表する場面を一枚残しましょう。";
 "home.mission.completed" = "今日の一枚でミッションを達成しました。";
 "home.mission.record_button" = "ミッションで記録する";
+"home.mission.record_button.accessibility_hint" = "今日のミッション用の記録編集画面を開きます。";
 "home.entry.complete" = "今日の記録完了";
 "home.entry.edit_button" = "今日の記録を編集";
+"home.entry.edit_button.accessibility_hint" = "保存済みの今日の記録を編集します。";
+"home.entry.photo.accessibility_label" = "今日の記録写真";
 "home.empty.title" = "今日の一枚がまだありません";
 "home.empty.subtitle" = "アルバムから写真を選んでメモを残しましょう。";
 "home.empty.button" = "今日の写真を残す";
+"home.empty.button.accessibility_hint" = "今日の写真を追加する記録編集画面を開きます。";
+"home.empty.accessibility_label" = "今日保存された写真はまだありません。";
 "home.progress.title" = "今月の進捗";
 "home.progress.summary" = "今月%d日中%d日記録";
+"home.progress.accessibility_value" = "%d日記録、全%d日";
 "home.recent.title" = "最近の記録";
 "home.recent.empty" = "最近の記録がまだありません。今日の最初の一枚を残しましょう。";
+"home.recent.photo.accessibility_label" = "最近の記録写真";
 
 "calendar.weekday.sun" = "日";
 "calendar.weekday.mon" = "月";
@@ -47,19 +56,31 @@
 "calendar.accessibility.has_entry" = "記録あり";
 "calendar.accessibility.no_entry" = "記録なし";
 "calendar.accessibility.day_status" = "%d日、%@";
+"calendar.accessibility.today_day_status" = "%d日、今日、%@";
+"calendar.accessibility.open_entry_hint" = "記録詳細を開きます。";
+"calendar.previous_month.accessibility_label" = "前の月";
+"calendar.next_month.accessibility_label" = "次の月";
+"calendar.month_button.accessibility_hint" = "表示中のカレンダー月を変更します。";
 
 "editor.title.new" = "今日の記録";
 "editor.title.edit" = "記録を編集";
 "editor.error.alert_title" = "保存できません";
 "editor.photo.empty" = "今日の一枚を選んでください";
 "editor.photo.empty_detail" = "保存前にカメラ撮影またはアルバム選択を利用できます。";
+"editor.photo.empty.accessibility_label" = "写真が選択されていません";
+"editor.photo.preview.accessibility_label" = "選択した写真のプレビュー";
 "editor.photo.pick" = "アルバムから写真を選択";
 "editor.photo.repick" = "アルバムから再選択";
+"editor.photo.pick.accessibility_hint" = "フォトライブラリの選択画面を開きます。";
 "editor.camera.unavailable" = "カメラを使用できません";
+"editor.camera.unavailable.accessibility_hint" = "このデバイスではカメラを使用できないため、アルバムから選択してください。";
 "editor.camera.capture" = "カメラで撮影";
 "editor.camera.recapture" = "カメラで再撮影";
+"editor.camera.accessibility_hint" = "カメラを開きます。カメラ権限は必要なときだけリクエストします。";
 "editor.memo.title" = "今日のひと言";
 "editor.memo.placeholder" = "この写真を選んだ理由を書いてみましょう";
+"editor.memo.accessibility_label" = "今日のひと言";
+"editor.memo.accessibility_hint" = "この写真への任意のメモを入力します。";
 "editor.mood.title" = "今日の気分";
 "editor.mood.good" = "良い";
 "editor.mood.calm" = "穏やか";
@@ -67,8 +88,11 @@
 "editor.mood.excited" = "わくわく";
 "editor.mood.mixed" = "複雑";
 "editor.mood.neutral" = "普通";
+"editor.mood.selected.accessibility_value" = "選択中";
+"editor.mood.option.accessibility_hint" = "今日の気分として設定します。";
 "editor.save.new" = "今日の一枚として保存";
 "editor.save.edit" = "変更を保存";
+"editor.save.accessibility_hint" = "選択した写真、メモ、気分を今日の記録として保存します。";
 "editor.saving" = "保存中...";
 "editor.status.saving" = "写真を保存し、今日の記録を更新しています。";
 "editor.status.photo_ready" = "写真が選択されました。メモと気分を確認して保存できます。";
@@ -85,10 +109,13 @@
 "editor.completion.reward_xp" = "+20 XP";
 "editor.completion.return_first" = "明日も一枚残すと2日ストリークが始まります。";
 "editor.completion.return_next" = "明日もう一枚残すと%d日ストリークにつながります。";
+"editor.completion.action.accessibility_hint" = "保存完了後に完了画面を閉じます。";
 
 "entry.memo.empty" = "メモなしで写真だけを記録しました。";
 "entry.detail.title" = "記録詳細";
 "entry.detail.return_action" = "記録へ戻る";
+"entry.detail.edit.accessibility_hint" = "この記録を編集画面で開きます。";
+"entry.detail.photo.accessibility_label" = "記録写真";
 "entry.detail.mood" = "気分";
 "entry.detail.mission" = "ミッション";
 "entry.detail.source" = "記録方法";
@@ -98,6 +125,7 @@
 "entry.delete.confirm_title" = "記録を削除しますか？";
 "entry.delete.confirm_message" = "削除した記録はカレンダーで非表示になり、ストリークは残りの記録を基準に再計算されます。";
 "entry.delete.action" = "記録を削除";
+"entry.delete.accessibility_hint" = "この記録を削除し、残りの記録をもとにストリークを再計算します。";
 "entry.delete.deleting" = "削除中...";
 "entry.delete.error_title" = "削除できません";
 "entry.source.library" = "アルバム";
@@ -115,10 +143,13 @@
 "profile.export.action" = "書き出しを作成";
 "profile.export.exporting" = "書き出しを作成中...";
 "profile.export.share" = "書き出しファイルを共有";
+"profile.export.accessibility_hint" = "共有できるローカル書き出しパッケージを作成します。";
 "profile.export.status.ready" = "書き出し準備完了: 記録%d件、メディアファイル%d件。";
 "profile.export.status.ready_with_warnings" = "書き出し準備完了: 記録%d件、メディアファイル%d件、manifest警告%d件。";
 "profile.notification.title" = "毎日の記録リマインダー";
 "profile.notification.time" = "通知時刻";
+"profile.notification.time.accessibility_hint" = "毎日の記録リマインダー時刻を設定します。";
+"profile.notification.toggle.accessibility_hint" = "必要に応じて通知権限をリクエストし、毎日の通知を予約または取り消します。";
 "profile.notification.status.loading" = "通知状態を確認中です。";
 "profile.notification.status.scheduled" = "毎日%@にお知らせします。";
 "profile.notification.status.authorized" = "通知権限が許可されています。";
@@ -126,6 +157,10 @@
 "profile.notification.status.not_determined" = "通知をオンにすると権限リクエストが表示されます。";
 "profile.notification.status.unknown" = "現在、通知状態を確認できません。";
 "profile.notification.permission_denied" = "通知権限がオフです。iOS設定で許可すると再度オンにできます。";
+"profile.privacy.title" = "プライバシーと保存";
+"profile.privacy.local_storage" = "記録と写真はこのデバイス内にローカル保存されます。";
+"profile.privacy.permissions" = "カメラとフォトライブラリへのアクセスは、撮影または写真選択時だけリクエストします。";
+"profile.privacy.delete" = "記録を削除するとアーカイブから非表示にし、可能な場合は保存済み画像ファイルも削除します。";
 
 "onboarding.page1.title" = "一日一枚で十分です";
 "onboarding.page1.message" = "長く書かなくても大丈夫です。今日を代表する写真一枚から記録を始めましょう。";
@@ -136,6 +171,9 @@
 "onboarding.start" = "始める";
 "onboarding.next" = "次へ";
 "onboarding.skip" = "あとで見る";
+"onboarding.start.accessibility_hint" = "オンボーディングを終了してDailyFrameを開きます。";
+"onboarding.next.accessibility_hint" = "次のオンボーディングページへ進みます。";
+"onboarding.skip.accessibility_hint" = "オンボーディングをスキップしてDailyFrameを開きます。";
 
 "mission.category.record" = "記録";
 "mission.category.observation" = "観察";

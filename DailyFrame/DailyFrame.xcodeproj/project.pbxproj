@@ -464,14 +464,13 @@
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Config/DailyFrame-Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = DailyFrame;
-				INFOPLIST_KEY_NSCameraUsageDescription = "Camera access is needed to capture today's moment.";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Photo library access is needed to pick today's photo.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "DailyFrame uses the camera only when you choose to take a photo for today's private entry.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "DailyFrame uses your photo library only when you choose a photo for a private daily entry.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -502,14 +501,13 @@
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Config/DailyFrame-Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = DailyFrame;
-				INFOPLIST_KEY_NSCameraUsageDescription = "Camera access is needed to capture today's moment.";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Photo library access is needed to pick today's photo.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "DailyFrame uses the camera only when you choose to take a photo for today's private entry.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "DailyFrame uses your photo library only when you choose a photo for a private daily entry.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
