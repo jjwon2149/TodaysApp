@@ -45,12 +45,17 @@ struct ImageStorageService {
     private let fileManager: FileManager
     private let entriesDirectoryURL: URL?
 
-    init(fileManager: FileManager = .default, baseDirectoryURL: URL? = nil) {
+    init(fileManager: FileManager = .default) {
+        self.fileManager = fileManager
+        self.entriesDirectoryURL = nil
+    }
+
+    init(fileManager: FileManager = .default, baseDirectoryURL: URL?) {
         self.fileManager = fileManager
         self.entriesDirectoryURL = baseDirectoryURL
     }
 
-    init(fileManager: FileManager = .default, entriesDirectoryURL: URL? = nil) {
+    init(fileManager: FileManager = .default, entriesDirectoryURL: URL?) {
         self.fileManager = fileManager
         self.entriesDirectoryURL = entriesDirectoryURL
     }
