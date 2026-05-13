@@ -13,6 +13,7 @@
 		C0D690022FAB910000000001 /* EntryRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D690122FAB910000000001 /* EntryRepositoryTests.swift */; };
 		C0D690032FAB910000000001 /* MissionServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D690132FAB910000000001 /* MissionServiceTests.swift */; };
 		C0D690042FAB910000000001 /* HomeProfileStreakContractTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D690142FAB910000000001 /* HomeProfileStreakContractTests.swift */; };
+		DFA0000C2FB000000000001 /* DailyFrameWidget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = DFA000012FB000000000001 /* DailyFrameWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, CodeSignOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -22,6 +23,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = 4AF351A82FAB82320053AF89;
 			remoteInfo = DailyFrame;
+		};
+		DFA0000D2FB000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4AF351A12FAB82320053AF89 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = DFA000082FB000000000001;
+			remoteInfo = DailyFrameWidget;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -34,6 +42,7 @@
 		C0D690122FAB910000000001 /* EntryRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntryRepositoryTests.swift; sourceTree = "<group>"; };
 		C0D690132FAB910000000001 /* MissionServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MissionServiceTests.swift; sourceTree = "<group>"; };
 		C0D690142FAB910000000001 /* HomeProfileStreakContractTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeProfileStreakContractTests.swift; sourceTree = "<group>"; };
+		DFA000012FB000000000001 /* DailyFrameWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = DailyFrameWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -42,7 +51,36 @@
 			path = DailyFrame;
 			sourceTree = "<group>";
 		};
+		DFA000022FB000000000001 /* DailyFrameWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = DailyFrameWidget;
+			sourceTree = "<group>";
+		};
+		DFA000032FB000000000001 /* DailyFrameShared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = DailyFrameShared;
+			sourceTree = "<group>";
+		};
+		DFA0000F2FB000000000001 /* Config */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Config;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		DFA000072FB000000000001 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				DFA0000C2FB000000000001 /* DailyFrameWidget.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		4AF351A62FAB82320053AF89 /* Frameworks */ = {
@@ -59,6 +97,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		DFA000042FB000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -66,6 +111,9 @@
 			isa = PBXGroup;
 			children = (
 				4AF351AB2FAB82320053AF89 /* DailyFrame */,
+				DFA0000F2FB000000000001 /* Config */,
+				DFA000032FB000000000001 /* DailyFrameShared */,
+				DFA000022FB000000000001 /* DailyFrameWidget */,
 				BBD000042FAB900000000001 /* DailyFrameTests */,
 				4AF351AA2FAB82320053AF89 /* Products */,
 			);
@@ -75,6 +123,7 @@
 			isa = PBXGroup;
 			children = (
 				4AF351A92FAB82320053AF89 /* DailyFrame.app */,
+				DFA000012FB000000000001 /* DailyFrameWidget.appex */,
 				BBD000032FAB900000000001 /* DailyFrameTests.xctest */,
 			);
 			name = Products;
@@ -103,13 +152,16 @@
 				4AF351A52FAB82320053AF89 /* Sources */,
 				4AF351A62FAB82320053AF89 /* Frameworks */,
 				4AF351A72FAB82320053AF89 /* Resources */,
+				DFA000072FB000000000001 /* Embed App Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				DFA0000E2FB000000000001 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				4AF351AB2FAB82320053AF89 /* DailyFrame */,
+				DFA000032FB000000000001 /* DailyFrameShared */,
 			);
 			name = DailyFrame;
 			packageProductDependencies = (
@@ -117,6 +169,29 @@
 			productName = DailyFrame;
 			productReference = 4AF351A92FAB82320053AF89 /* DailyFrame.app */;
 			productType = "com.apple.product-type.application";
+		};
+		DFA000082FB000000000001 /* DailyFrameWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DFA0000B2FB000000000001 /* Build configuration list for PBXNativeTarget "DailyFrameWidget" */;
+			buildPhases = (
+				DFA000052FB000000000001 /* Sources */,
+				DFA000042FB000000000001 /* Frameworks */,
+				DFA000062FB000000000001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				DFA000022FB000000000001 /* DailyFrameWidget */,
+				DFA000032FB000000000001 /* DailyFrameShared */,
+			);
+			name = DailyFrameWidget;
+			packageProductDependencies = (
+			);
+			productName = DailyFrameWidget;
+			productReference = DFA000012FB000000000001 /* DailyFrameWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 		BBD000052FAB900000000001 /* DailyFrameTests */ = {
 			isa = PBXNativeTarget;
@@ -151,6 +226,9 @@
 					4AF351A82FAB82320053AF89 = {
 						CreatedOnToolsVersion = 16.4;
 					};
+					DFA000082FB000000000001 = {
+						CreatedOnToolsVersion = 16.4;
+					};
 					BBD000052FAB900000000001 = {
 						CreatedOnToolsVersion = 16.4;
 						TestTargetID = 4AF351A82FAB82320053AF89;
@@ -174,6 +252,7 @@
 			projectRoot = "";
 			targets = (
 				4AF351A82FAB82320053AF89 /* DailyFrame */,
+				DFA000082FB000000000001 /* DailyFrameWidget */,
 				BBD000052FAB900000000001 /* DailyFrameTests */,
 			);
 		};
@@ -188,6 +267,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		BBD000082FAB900000000001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DFA000062FB000000000001 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -217,6 +303,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		DFA000052FB000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -224,6 +317,11 @@
 			isa = PBXTargetDependency;
 			target = 4AF351A82FAB82320053AF89 /* DailyFrame */;
 			targetProxy = BBD000092FAB900000000001 /* PBXContainerItemProxy */;
+		};
+		DFA0000E2FB000000000001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = DFA000082FB000000000001 /* DailyFrameWidget */;
+			targetProxy = DFA0000D2FB000000000001 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -354,11 +452,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Config/DailyFrame.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = 2TXBC7N5Q5;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Config/DailyFrame-Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = DailyFrame;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Camera access is needed to capture today's moment.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Photo library access is needed to pick today's photo.";
@@ -390,11 +490,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Config/DailyFrame.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = 2TXBC7N5Q5;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Config/DailyFrame-Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = DailyFrame;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Camera access is needed to capture today's moment.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Photo library access is needed to pick today's photo.";
@@ -411,6 +513,70 @@
 				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mabataki.smithwrld999.DailyFrame;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		DFA000092FB000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = Config/DailyFrameWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = 2TXBC7N5Q5;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Config/DailyFrameWidget-Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mabataki.smithwrld999.DailyFrame.Widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		DFA0000A2FB000000000001 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = Config/DailyFrameWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = 2TXBC7N5Q5;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Config/DailyFrameWidget-Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mabataki.smithwrld999.DailyFrame.Widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
@@ -495,6 +661,15 @@
 			buildConfigurations = (
 				BBD0000B2FAB900000000001 /* Debug */,
 				BBD0000C2FAB900000000001 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		DFA0000B2FB000000000001 /* Build configuration list for PBXNativeTarget "DailyFrameWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DFA000092FB000000000001 /* Debug */,
+				DFA0000A2FB000000000001 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

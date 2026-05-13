@@ -198,6 +198,8 @@ final class EntryEditorViewModel: ObservableObject {
                     rewardText: L10n.string("editor.completion.reward_xp"),
                     returnMessage: Self.returnMessage(for: max(streakState.currentStreak, 1))
                 )
+
+                try? await WidgetSnapshotService().refreshSnapshot()
             } catch {
                 let shouldCleanupCreatedFiles: Bool
 

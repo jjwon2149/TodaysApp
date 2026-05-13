@@ -296,4 +296,34 @@ final class StreakServiceTests: DomainTestFixture {
         XCTAssertEqual(rebuilt.lastAutoAppliedFreezeLocalDateString, "2026-05-06")
         XCTAssertEqual(rebuilt.freezeUsageHistory.count, 1)
     }
+
+    func testWidgetSnapshotClearsTodayEntryAfterMidnightButKeepsActiveStreak() {
+        let snapshot = DailyFrameWidgetSnapshot(
+            generatedAtUTC: localDate("2026-05-05"),
+            localDateString: "2026-05-05",
+            hasTodayEntry: true,
+            currentStreak: 3,
+            longestStreak: 3,
+            freezeCount: 1,
+            lastCompletedLocalDateString: "2026-05-05"
+        )
+
+        XCTAssertFalse(snapshot.hasEntry(on: localDate("2026-05-06")))
+        XCTAssertEqual(snapshot.displayCurrentStreak(on: localDate("2026-05-06")), 3)
+    }
+
+    func testWidgetSnapshotDoesNotShowExpiredStreakFromStaleData() {
+        let snapshot = DailyFrameWidgetSnapshot(
+            generatedAtUTC: localDate("2026-05-05"),
+            localDateString: "2026-05-05",
+            hasTodayEntry: true,
+            currentStreak: 3,
+            longestStreak: 3,
+            freezeCount: 0,
+            lastCompletedLocalDateString: "2026-05-05"
+        )
+
+        XCTAssertFalse(snapshot.hasEntry(on: localDate("2026-05-07")))
+        XCTAssertEqual(snapshot.displayCurrentStreak(on: localDate("2026-05-07")), 0)
+    }
 }
