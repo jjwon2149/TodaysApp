@@ -37,7 +37,8 @@ final class BackupExportTests: XCTestCase {
 
     func testStoredMediaReferencesArePortableFilenamesAndLegacyAbsolutePathsResolve() throws {
         let fileName = "2026-05-13-photo.jpg"
-        let fileURL = try imageStorageService.saveImageData(Data([1, 2, 3]), fileName: fileName)
+        let fileURL = entriesDirectory.appending(path: fileName)
+        try Data([1, 2, 3]).write(to: fileURL)
 
         XCTAssertEqual(try imageStorageService.mediaReference(for: fileURL), fileName)
 
