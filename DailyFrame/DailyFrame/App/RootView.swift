@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct RootView: View {
+    @Environment(\.scenePhase) private var scenePhase
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @State private var selectedTab: AppTab = .home
     @State private var didStartLaunchMediaMaintenance = false
@@ -27,7 +28,18 @@ struct RootView: View {
         .background(AppTheme.Colors.background.ignoresSafeArea())
         .task {
             try? await BootstrapService().seedDefaultsIfNeeded()
+            await refreshWidgetSnapshot()
             startLaunchMediaMaintenanceIfNeeded()
+        }
+        .onOpenURL { url in
+            handleDeepLink(url)
+        }
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active else { return }
+
+            Task {
+                await refreshWidgetSnapshot()
+            }
         }
     }
 
@@ -40,6 +52,24 @@ struct RootView: View {
         Task.detached(priority: .background) {
             _ = await ImageStorageService().performLaunchMaintenance()
         }
+    }
+
+    private func handleDeepLink(_ url: URL) {
+        guard DailyFrameWidgetDeepLink.isTodayURL(url) else {
+            return
+        }
+
+        if hasCompletedOnboarding {
+            selectedTab = .home
+        }
+
+        Task {
+            await refreshWidgetSnapshot()
+        }
+    }
+
+    private func refreshWidgetSnapshot() async {
+        try? await WidgetSnapshotService().refreshSnapshot()
     }
 
     @ViewBuilder

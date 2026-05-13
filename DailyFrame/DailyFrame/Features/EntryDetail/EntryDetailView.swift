@@ -185,6 +185,7 @@ struct EntryDetailView: View {
         do {
             try await entryRepository.softDelete(localDateString: entry.localDateString)
             try await streakService.rebuildFromActiveEntries()
+            try? await WidgetSnapshotService().refreshSnapshot()
             try? imageStorageService.deleteFileIfExists(at: entry.imageLocalPath)
 
             if let thumbnailLocalPath = entry.thumbnailLocalPath {

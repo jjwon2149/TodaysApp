@@ -964,6 +964,7 @@ streak + 캘린더 연결
 5. 앱 아이콘 확정
 6. 크래시 없는 기본 루프 확인
 7. 저장 공간 사용량 점검
+8. Widget 릴리즈 빌드는 `DailyFrame` 앱과 `DailyFrameWidget` extension 양쪽 provisioning profile에 App Group `group.com.mabataki.smithwrld999.DailyFrame`이 활성화되어야 한다. 미설정 signed build는 위젯 QA와 릴리즈를 차단한다.
 
 ---
 
@@ -1018,4 +1019,3 @@ streak + 캘린더 연결
 8. `Notification`
 9. `Badge`
 10. `Premium Shell`
-
