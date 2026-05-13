@@ -63,6 +63,7 @@ The code separates user-facing screens from app rules. View models orchestrate r
 ## Quality Notes
 
 - Streak recalculation is covered by unit tests in `DailyFrameTests/StreakServiceTests.swift`.
+- Repeatable feature-complete smoke coverage is defined in `docs/qa-smoke-checklist.md`.
 - UI copy is localized through `Localizable.strings` instead of hard-coded in feature views.
 - Personal media is stored locally; public feed, account system, and backend sync are intentionally out of MVP scope.
 - App Store style screenshots are kept in `AppStoreScreenshots/` so reviewers can understand the product without opening Xcode.
