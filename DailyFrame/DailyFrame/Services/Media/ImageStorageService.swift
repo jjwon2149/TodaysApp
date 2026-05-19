@@ -182,6 +182,25 @@ struct ImageStorageService {
         return resolvedFileURL(for: imageReference)
     }
 
+    func saveSyncedMediaFile(from sourceURL: URL, preferredFileName: String) throws -> String {
+        let fileName = normalizedMediaReference(for: preferredFileName)
+        try validateFileName(fileName)
+
+        let directory = try makeEntriesDirectoryIfNeeded()
+        let destinationURL = directory.appendingPathComponent(fileName, isDirectory: false)
+
+        if sourceURL.standardizedFileURL.path == destinationURL.standardizedFileURL.path {
+            return fileName
+        }
+
+        if fileManager.fileExists(atPath: destinationURL.path) {
+            try fileManager.removeItem(at: destinationURL)
+        }
+
+        try fileManager.copyItem(at: sourceURL, to: destinationURL)
+        return fileName
+    }
+
     @discardableResult
     func performLaunchMaintenance(entryRepository: EntryRepository = EntryRepository()) async -> MaintenanceResult {
         var result = MaintenanceResult()

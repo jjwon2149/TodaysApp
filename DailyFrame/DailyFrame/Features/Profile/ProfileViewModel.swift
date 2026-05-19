@@ -18,6 +18,8 @@ final class ProfileViewModel: ObservableObject {
     @Published private(set) var isExportingArchive = false
     @Published private(set) var exportedArchiveURL: URL?
     @Published private(set) var exportStatusMessage: String?
+    @Published private(set) var syncStatusMessage = L10n.string("profile.sync.status.loading")
+    @Published private(set) var isSyncing = false
 
     private let entryRepository: EntryRepository
     private let streakService: StreakService
@@ -86,6 +88,8 @@ final class ProfileViewModel: ObservableObject {
         } catch {
             notificationStatusMessage = L10n.string("error.notification.settings_load")
         }
+
+        await refreshCloudSyncStatus()
     }
 
     private func loadProfileStats() async {
@@ -146,6 +150,18 @@ final class ProfileViewModel: ObservableObject {
         } catch {
             exportStatusMessage = L10n.string("error.export.archive")
         }
+    }
+
+    func syncNow() async {
+        guard isSyncing == false else { return }
+
+        isSyncing = true
+        syncStatusMessage = L10n.string("profile.sync.status.syncing")
+        defer { isSyncing = false }
+
+        let status = await CloudKitSyncService.shared.synchronize(trigger: .manual)
+        syncStatusMessage = message(for: status)
+        await loadProfileStats()
     }
 
     func setReminderEnabled(_ isEnabled: Bool) async {
@@ -303,6 +319,51 @@ final class ProfileViewModel: ObservableObject {
         @unknown default:
             notificationStatusMessage = L10n.string("profile.notification.status.unknown")
         }
+    }
+
+    private func refreshCloudSyncStatus() async {
+        let status = await CloudKitSyncService.shared.latestStatus()
+        syncStatusMessage = message(for: status)
+        isSyncing = false
+    }
+
+    private func message(for status: CloudSyncStatus) -> String {
+        switch status.state {
+        case .idle:
+            return L10n.string("profile.sync.status.idle")
+        case .syncing:
+            return L10n.string("profile.sync.status.syncing")
+        case .synced:
+            let timestamp = formattedSyncTimestamp(status.lastSyncedAtUTC)
+
+            if status.skippedMediaCount > 0 {
+                return L10n.format("profile.sync.status.synced_with_warnings", timestamp, status.skippedMediaCount)
+            }
+
+            return L10n.format("profile.sync.status.synced", timestamp)
+        case .unavailable(let reason):
+            switch reason {
+            case .noAccount:
+                return L10n.string("profile.sync.status.no_account")
+            case .restricted:
+                return L10n.string("profile.sync.status.restricted")
+            case .couldNotDetermine, .temporarilyUnavailable, .unknown:
+                return L10n.string("profile.sync.status.unavailable")
+            }
+        case .failed:
+            return L10n.string("profile.sync.status.failed")
+        }
+    }
+
+    private func formattedSyncTimestamp(_ date: Date?) -> String {
+        guard let date else {
+            return L10n.string("profile.sync.status.just_now")
+        }
+
+        let formatter = DateFormatter()
+        formatter.dateStyle = .short
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
     }
 
     private func syncPublishedState(from settings: AppSettings) {
