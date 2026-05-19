@@ -8,6 +8,7 @@ final class CloudKitSyncServiceTests: XCTestCase {
     private var store: PersistenceStore!
     private var entryRepository: EntryRepository!
     private var imageStorageService: ImageStorageService!
+    private var appSettingsRepository: AppSettingsRepository!
     private var remoteStore: FakeCloudSyncRemoteStore!
 
     override func setUp() async throws {
@@ -23,7 +24,9 @@ final class CloudKitSyncServiceTests: XCTestCase {
         store = PersistenceStore(baseDirectoryURL: temporaryDirectory)
         entryRepository = EntryRepository(store: store)
         imageStorageService = ImageStorageService(entriesDirectoryURL: entriesDirectory)
+        appSettingsRepository = AppSettingsRepository(store: store)
         remoteStore = FakeCloudSyncRemoteStore()
+        try await seed()
     }
 
     override func tearDown() async throws {
@@ -32,6 +35,7 @@ final class CloudKitSyncServiceTests: XCTestCase {
         }
 
         remoteStore = nil
+        appSettingsRepository = nil
         imageStorageService = nil
         entryRepository = nil
         store = nil
@@ -141,21 +145,136 @@ final class CloudKitSyncServiceTests: XCTestCase {
         XCTAssertEqual(status.downloadedEntryCount, 1)
     }
 
+    func testEnabledPolicyWithoutDisclosureSkipsRemoteWorkBeforeDisclosure() async throws {
+        try await seed(
+            entries: [
+                localEntry("2026-05-16", updatedAtUTC: instant(100), imageLocalPath: "local.jpg")
+            ],
+            settings: AppSettings(iCloudSyncPolicy: .enabled)
+        )
+
+        let service = makeService()
+        let status = await service.synchronize(trigger: .launch)
+        let activeEntries = try await entryRepository.fetchAllActiveEntries()
+
+        XCTAssertEqual(activeEntries.map(\.localDateString), ["2026-05-16"])
+        XCTAssertEqual(remoteStore.accountStateCallCount, 0)
+        XCTAssertTrue(remoteStore.savedEntries.isEmpty)
+        XCTAssertTrue(remoteStore.savedMedia.isEmpty)
+
+        if case .notSetUp = status.state {
+            XCTAssertTrue(true)
+        } else {
+            XCTFail("Expected not-set-up status, got \(status.state)")
+        }
+    }
+
+    func testDisabledPolicyKeepsLocalChangeLocalAndDoesNotUpload() async throws {
+        try await seed(
+            entries: [
+                localEntry("2026-05-17", updatedAtUTC: instant(100), imageLocalPath: "local.jpg", isDeleted: true)
+            ],
+            settings: AppSettings(
+                iCloudSyncPolicy: .disabled,
+                iCloudSyncDisclosureSeenAtUTC: instant(10)
+            )
+        )
+
+        let service = makeService()
+        let status = await service.synchronize(trigger: .localChange)
+        let rawEntries = try await store.load().entries
+
+        XCTAssertEqual(rawEntries.map(\.localDateString), ["2026-05-17"])
+        XCTAssertEqual(rawEntries.first?.isDeleted, true)
+        XCTAssertEqual(remoteStore.accountStateCallCount, 0)
+        XCTAssertTrue(remoteStore.savedEntries.isEmpty)
+        XCTAssertTrue(remoteStore.savedMedia.isEmpty)
+
+        if case .disabled = status.state {
+            XCTAssertTrue(true)
+        } else {
+            XCTFail("Expected disabled status, got \(status.state)")
+        }
+    }
+
+    @MainActor
+    func testProfileSyncStatusMessageMappingCoversPolicyAndFallbackStates() {
+        let noAccount = CloudSyncStatus(
+            state: .unavailable(.noAccount),
+            lastSyncedAtUTC: nil,
+            uploadedEntryCount: 0,
+            downloadedEntryCount: 0,
+            uploadedMediaCount: 0,
+            downloadedMediaCount: 0,
+            skippedMediaCount: 0
+        )
+        let offline = CloudSyncStatus(
+            state: .unavailable(.temporarilyUnavailable),
+            lastSyncedAtUTC: nil,
+            uploadedEntryCount: 0,
+            downloadedEntryCount: 0,
+            uploadedMediaCount: 0,
+            downloadedMediaCount: 0,
+            skippedMediaCount: 0
+        )
+        let failed = CloudSyncStatus(
+            state: .failed("network"),
+            lastSyncedAtUTC: nil,
+            uploadedEntryCount: 0,
+            downloadedEntryCount: 0,
+            uploadedMediaCount: 0,
+            downloadedMediaCount: 0,
+            skippedMediaCount: 0
+        )
+
+        XCTAssertEqual(
+            ProfileViewModel.syncStatusMessage(for: .idle, policy: .notSetUp),
+            L10n.string("profile.sync.status.not_set_up")
+        )
+        XCTAssertEqual(
+            ProfileViewModel.syncStatusMessage(for: .idle, policy: .disabled),
+            L10n.string("profile.sync.status.disabled")
+        )
+        XCTAssertEqual(
+            ProfileViewModel.syncStatusMessage(for: .idle, policy: .enabled),
+            L10n.string("profile.sync.status.idle")
+        )
+        XCTAssertEqual(
+            ProfileViewModel.syncStatusMessage(for: noAccount, policy: .enabled),
+            L10n.string("profile.sync.status.no_account")
+        )
+        XCTAssertEqual(
+            ProfileViewModel.syncStatusMessage(for: offline, policy: .enabled),
+            L10n.string("profile.sync.status.unavailable")
+        )
+        XCTAssertEqual(
+            ProfileViewModel.syncStatusMessage(for: failed, policy: .enabled),
+            L10n.string("profile.sync.status.failed")
+        )
+    }
+
     private func makeService() -> CloudKitSyncService {
         CloudKitSyncService(
             remoteStore: remoteStore,
             entryRepository: entryRepository,
             imageStorageService: imageStorageService,
+            appSettingsRepository: appSettingsRepository,
             nowProvider: { self.instant(999) }
         )
     }
 
-    private func seed(entries: [DailyPhotoEntry]) async throws {
+    private func seed(
+        entries: [DailyPhotoEntry] = [],
+        settings: AppSettings = AppSettings(
+            iCloudSyncPolicy: .enabled,
+            iCloudSyncDisclosureSeenAtUTC: Date(timeIntervalSince1970: 1_778_688_001)
+        )
+    ) async throws {
         let snapshot = AppStateSnapshot(
             userProfile: UserProfile(),
             entries: entries,
             streakState: StreakState(),
-            settings: AppSettings(),
+            settings: settings,
             missionHistory: []
         )
 
@@ -212,11 +331,13 @@ private final class FakeCloudSyncRemoteStore: CloudSyncRemoteStore {
     var accountStateValue: CloudSyncAccountState = .available
     var remoteEntries: [CloudSyncEntryRecord] = []
     var remoteMedia: [CloudSyncMediaAsset] = []
+    private(set) var accountStateCallCount = 0
     private(set) var savedEntries: [CloudSyncEntryRecord] = []
     private(set) var savedMedia: [CloudSyncMediaAsset] = []
 
     func accountState() async throws -> CloudSyncAccountState {
-        accountStateValue
+        accountStateCallCount += 1
+        return accountStateValue
     }
 
     func fetchEntries() async throws -> [CloudSyncEntryRecord] {

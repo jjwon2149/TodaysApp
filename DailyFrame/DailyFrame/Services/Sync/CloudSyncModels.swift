@@ -23,6 +23,8 @@ enum CloudSyncRunTrigger {
 struct CloudSyncStatus: Equatable {
     enum State: Equatable {
         case idle
+        case notSetUp
+        case disabled
         case syncing
         case synced
         case unavailable(CloudSyncUnavailableReason)

@@ -14,6 +14,7 @@ actor CloudKitSyncService {
     private let remoteStore: CloudSyncRemoteStore
     private let entryRepository: EntryRepository
     private let imageStorageService: ImageStorageService
+    private let appSettingsRepository: AppSettingsRepository
     private let nowProvider: () -> Date
     private var status: CloudSyncStatus = .idle
     private var isSyncing = false
@@ -22,11 +23,13 @@ actor CloudKitSyncService {
         remoteStore: CloudSyncRemoteStore = CloudKitRemoteStore(),
         entryRepository: EntryRepository = EntryRepository(),
         imageStorageService: ImageStorageService = ImageStorageService(),
+        appSettingsRepository: AppSettingsRepository = AppSettingsRepository(),
         nowProvider: @escaping () -> Date = { .now }
     ) {
         self.remoteStore = remoteStore
         self.entryRepository = entryRepository
         self.imageStorageService = imageStorageService
+        self.appSettingsRepository = appSettingsRepository
         self.nowProvider = nowProvider
     }
 
@@ -41,10 +44,27 @@ actor CloudKitSyncService {
         }
 
         isSyncing = true
-        status = .syncing(previous: status)
         defer { isSyncing = false }
 
         do {
+            let settings = try await appSettingsRepository.fetchSettings()
+            let syncPolicy = settings.effectiveICloudSyncPolicy
+
+            guard syncPolicy.allowsSync else {
+                status = CloudSyncStatus(
+                    state: syncPolicy == .disabled ? .disabled : .notSetUp,
+                    lastSyncedAtUTC: status.lastSyncedAtUTC,
+                    uploadedEntryCount: 0,
+                    downloadedEntryCount: 0,
+                    uploadedMediaCount: 0,
+                    downloadedMediaCount: 0,
+                    skippedMediaCount: 0
+                )
+                return status
+            }
+
+            status = .syncing(previous: status)
+
             let accountState = try await remoteStore.accountState()
 
             guard case .available = accountState else {

@@ -20,6 +20,8 @@ final class ProfileViewModel: ObservableObject {
     @Published private(set) var exportStatusMessage: String?
     @Published private(set) var syncStatusMessage = L10n.string("profile.sync.status.loading")
     @Published private(set) var isSyncing = false
+    @Published private(set) var isCloudSyncEnabled = false
+    @Published private(set) var isUpdatingSyncPolicy = false
 
     private let entryRepository: EntryRepository
     private let streakService: StreakService
@@ -76,6 +78,10 @@ final class ProfileViewModel: ObservableObject {
             from: latestFreezeUsage.protectedLocalDateString
         )
         return L10n.format("profile.freeze.notice", dateString)
+    }
+
+    var canSyncNow: Bool {
+        isCloudSyncEnabled && isSyncing == false && isUpdatingSyncPolicy == false
     }
 
     func load() async {
@@ -153,15 +159,46 @@ final class ProfileViewModel: ObservableObject {
     }
 
     func syncNow() async {
-        guard isSyncing == false else { return }
+        guard canSyncNow else {
+            syncStatusMessage = Self.syncStatusMessage(for: .idle, policy: appSettings.effectiveICloudSyncPolicy)
+            return
+        }
 
         isSyncing = true
         syncStatusMessage = L10n.string("profile.sync.status.syncing")
         defer { isSyncing = false }
 
         let status = await CloudKitSyncService.shared.synchronize(trigger: .manual)
-        syncStatusMessage = message(for: status)
+        syncStatusMessage = Self.syncStatusMessage(for: status, policy: appSettings.effectiveICloudSyncPolicy)
         await loadProfileStats()
+    }
+
+    func setICloudSyncEnabled(_ isEnabled: Bool) async {
+        guard isUpdatingSyncPolicy == false else { return }
+
+        isUpdatingSyncPolicy = true
+        errorMessage = nil
+
+        do {
+            let policy: ICloudSyncPolicy = isEnabled ? .enabled : .disabled
+            let disclosureSeenAt = appSettings.iCloudSyncDisclosureSeenAtUTC ?? dateProvider.currentDate()
+            appSettings = try await appSettingsRepository.updateICloudSyncPolicy(
+                policy,
+                disclosureSeenAtUTC: disclosureSeenAt
+            )
+            syncPublishedState(from: appSettings)
+            let status = await CloudKitSyncService.shared.latestStatus()
+            syncStatusMessage = Self.syncStatusMessage(for: status, policy: appSettings.effectiveICloudSyncPolicy)
+        } catch {
+            errorMessage = L10n.string("error.sync.policy_save")
+            syncPublishedState(from: appSettings)
+        }
+
+        isUpdatingSyncPolicy = false
+
+        if isEnabled && errorMessage == nil {
+            await syncNow()
+        }
     }
 
     func setReminderEnabled(_ isEnabled: Bool) async {
@@ -323,14 +360,27 @@ final class ProfileViewModel: ObservableObject {
 
     private func refreshCloudSyncStatus() async {
         let status = await CloudKitSyncService.shared.latestStatus()
-        syncStatusMessage = message(for: status)
+        syncStatusMessage = Self.syncStatusMessage(for: status, policy: appSettings.effectiveICloudSyncPolicy)
         isSyncing = false
     }
 
-    private func message(for status: CloudSyncStatus) -> String {
+    static func syncStatusMessage(for status: CloudSyncStatus, policy: ICloudSyncPolicy) -> String {
+        switch policy {
+        case .notSetUp:
+            return L10n.string("profile.sync.status.not_set_up")
+        case .disabled:
+            return L10n.string("profile.sync.status.disabled")
+        case .enabled:
+            break
+        }
+
         switch status.state {
         case .idle:
             return L10n.string("profile.sync.status.idle")
+        case .notSetUp:
+            return L10n.string("profile.sync.status.not_set_up")
+        case .disabled:
+            return L10n.string("profile.sync.status.disabled")
         case .syncing:
             return L10n.string("profile.sync.status.syncing")
         case .synced:
@@ -355,7 +405,7 @@ final class ProfileViewModel: ObservableObject {
         }
     }
 
-    private func formattedSyncTimestamp(_ date: Date?) -> String {
+    private static func formattedSyncTimestamp(_ date: Date?) -> String {
         guard let date else {
             return L10n.string("profile.sync.status.just_now")
         }
@@ -374,6 +424,7 @@ final class ProfileViewModel: ObservableObject {
             calendar: calendar,
             now: dateProvider.currentDate()
         )
+        isCloudSyncEnabled = settings.effectiveICloudSyncPolicy == .enabled
     }
 
     private var formattedReminderTime: String {

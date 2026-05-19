@@ -202,24 +202,55 @@ struct ProfileView: View {
                         .accessibilityHidden(true)
                 }
 
-                Button {
-                    Task {
-                        await viewModel.syncNow()
-                    }
-                } label: {
-                    Label(
-                        viewModel.isSyncing ? L10n.string("profile.sync.syncing") : L10n.string("profile.sync.action"),
-                        systemImage: viewModel.isSyncing ? "arrow.triangle.2.circlepath" : "icloud.and.arrow.up.fill"
+                Text("profile.sync.disclosure")
+                    .font(.system(.subheadline, design: .rounded))
+                    .foregroundStyle(AppTheme.Colors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Toggle(
+                    isOn: Binding(
+                        get: { viewModel.isCloudSyncEnabled },
+                        set: { isEnabled in
+                            Task {
+                                await viewModel.setICloudSyncEnabled(isEnabled)
+                            }
+                        }
                     )
-                    .font(.system(.headline, design: .rounded, weight: .semibold))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(AppTheme.Colors.textPrimary)
-                    .foregroundStyle(AppTheme.Colors.onAccent)
-                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                ) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("profile.sync.toggle")
+                            .font(.system(.body, design: .rounded, weight: .medium))
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        Text("profile.sync.toggle_detail")
+                            .font(.system(.footnote, design: .rounded))
+                            .foregroundStyle(AppTheme.Colors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
-                .disabled(viewModel.isSyncing)
-                .accessibilityHint(Text("profile.sync.accessibility_hint"))
+                .disabled(viewModel.isUpdatingSyncPolicy || viewModel.isSyncing)
+                .accessibilityHint(Text("profile.sync.toggle.accessibility_hint"))
+
+                if viewModel.isCloudSyncEnabled {
+                    Button {
+                        Task {
+                            await viewModel.syncNow()
+                        }
+                    } label: {
+                        Label(
+                            viewModel.isSyncing ? L10n.string("profile.sync.syncing") : L10n.string("profile.sync.action"),
+                            systemImage: viewModel.isSyncing ? "arrow.triangle.2.circlepath" : "icloud.and.arrow.up.fill"
+                        )
+                        .font(.system(.headline, design: .rounded, weight: .semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(AppTheme.Colors.textPrimary)
+                        .foregroundStyle(AppTheme.Colors.onAccent)
+                        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    }
+                    .disabled(viewModel.canSyncNow == false)
+                    .accessibilityHint(Text("profile.sync.accessibility_hint"))
+                }
 
                 Text(viewModel.syncStatusMessage)
                     .font(.system(.footnote, design: .rounded))
