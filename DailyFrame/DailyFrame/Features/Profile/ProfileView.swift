@@ -260,6 +260,11 @@ struct ProfileView: View {
                     .foregroundStyle(AppTheme.Colors.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
 
+                Text("profile.privacy.ads")
+                    .font(.system(.subheadline, design: .rounded))
+                    .foregroundStyle(AppTheme.Colors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
                 Text("profile.privacy.delete")
                     .font(.system(.subheadline, design: .rounded))
                     .foregroundStyle(AppTheme.Colors.textSecondary)
