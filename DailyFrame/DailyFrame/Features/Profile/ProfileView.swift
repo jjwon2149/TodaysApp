@@ -8,7 +8,7 @@ struct ProfileView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.large) {
+                VStack(alignment: .leading, spacing: 0) {
                     AppCard {
                         VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
                             Text("profile.header.title")
@@ -27,8 +27,10 @@ struct ProfileView: View {
                             }
                         }
                     }
+                    .profileSectionSpacing()
 
                     summarySection
+                        .profileSectionSpacing()
 
                     if let freezeNoticeText = viewModel.freezeNoticeText {
                         AppCard {
@@ -37,11 +39,15 @@ struct ProfileView: View {
                                 .foregroundStyle(AppTheme.Colors.accent)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
+                        .profileSectionSpacing()
                     }
 
                     notificationSettingsSection
+                        .profileSectionSpacing()
                     exportSection
+                        .profileSectionSpacing()
                     privacySection
+                    profileBannerPlacement
                 }
                 .padding(AppTheme.Spacing.medium)
             }
@@ -272,5 +278,31 @@ struct ProfileView: View {
             }
         }
         .accessibilityElement(children: .contain)
+    }
+
+    @ViewBuilder
+    private var profileBannerPlacement: some View {
+        if BannerAdPlacementPolicy.permitsBanner(on: .profile) {
+            ProfileFooterBannerAdPlacement()
+        }
+    }
+}
+
+private struct ProfileFooterBannerAdPlacement: View {
+    @State private var isVisible = false
+
+    var body: some View {
+        BannerAdView { isLoaded in
+            isVisible = isLoaded
+        }
+        .padding(.top, isVisible ? AppTheme.Spacing.large : 0)
+        .accessibilityLabel(Text("profile.ad.banner.accessibility_label"))
+        .accessibilityHint(Text("profile.ad.banner.accessibility_hint"))
+    }
+}
+
+private extension View {
+    func profileSectionSpacing() -> some View {
+        padding(.bottom, AppTheme.Spacing.large)
     }
 }

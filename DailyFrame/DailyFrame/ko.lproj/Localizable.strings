@@ -162,6 +162,8 @@
 "profile.privacy.permissions" = "카메라와 사진 앨범 접근은 촬영하거나 사진을 고를 때만 요청합니다.";
 "profile.privacy.ads" = "광고가 켜진 배포에서는 배너 광고에 Google AdMob을 사용하며, 기록·사진·메모를 광고 목적으로 Google에 보내지 않습니다.";
 "profile.privacy.delete" = "기록을 삭제하면 보관함에서 숨기고 가능한 경우 저장된 이미지 파일도 제거합니다.";
+"profile.ad.banner.accessibility_label" = "광고";
+"profile.ad.banner.accessibility_hint" = "스폰서 배너입니다.";
 
 "onboarding.page1.title" = "하루 한 장이면 충분합니다";
 "onboarding.page1.message" = "길게 쓰지 않아도 됩니다. 오늘을 대표하는 사진 한 장으로 기록을 시작합니다.";

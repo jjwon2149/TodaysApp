@@ -162,6 +162,8 @@
 "profile.privacy.permissions" = "カメラとフォトライブラリへのアクセスは、撮影または写真選択時だけリクエストします。";
 "profile.privacy.ads" = "広告が有効なリリースでは、バナー広告にGoogle AdMobを使用します。DailyFrameは記録、写真、メモを広告目的でGoogleに送信しません。";
 "profile.privacy.delete" = "記録を削除するとアーカイブから非表示にし、可能な場合は保存済み画像ファイルも削除します。";
+"profile.ad.banner.accessibility_label" = "広告";
+"profile.ad.banner.accessibility_hint" = "スポンサー付きバナーです。";
 
 "onboarding.page1.title" = "一日一枚で十分です";
 "onboarding.page1.message" = "長く書かなくても大丈夫です。今日を代表する写真一枚から記録を始めましょう。";

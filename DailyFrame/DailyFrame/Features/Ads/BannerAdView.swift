@@ -6,6 +6,12 @@ struct BannerAdView: View {
     @EnvironmentObject private var adsService: AdsService
     @State private var loadState: BannerAdLoadState = .idle
 
+    private let onVisibilityChange: (Bool) -> Void
+
+    init(onVisibilityChange: @escaping (Bool) -> Void = { _ in }) {
+        self.onVisibilityChange = onVisibilityChange
+    }
+
     var body: some View {
         if adsService.canRequestAds, let adUnitID = AdConfiguration.bannerAdUnitID {
             GeometryReader { proxy in
@@ -14,6 +20,7 @@ struct BannerAdView: View {
 
                 BannerAdContainer(adUnitID: adUnitID, adSize: adSize) { nextState in
                     loadState = nextState
+                    onVisibilityChange(nextState.isLoaded)
                 }
                 .frame(width: adSize.size.width, height: loadState.height)
                 .frame(maxWidth: .infinity)
@@ -21,6 +28,17 @@ struct BannerAdView: View {
             .frame(height: loadState.height)
             .clipped()
             .accessibilityHidden(loadState.isLoaded == false)
+            .onAppear {
+                onVisibilityChange(loadState.isLoaded)
+            }
+            .onDisappear {
+                onVisibilityChange(false)
+            }
+        } else {
+            EmptyView()
+                .onAppear {
+                    onVisibilityChange(false)
+                }
         }
     }
 }

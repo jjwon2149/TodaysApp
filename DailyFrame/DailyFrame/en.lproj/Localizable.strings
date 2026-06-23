@@ -162,6 +162,8 @@
 "profile.privacy.permissions" = "Camera and photo library access are requested only when you capture or choose a photo.";
 "profile.privacy.ads" = "If ads are enabled, banner ads use Google AdMob; DailyFrame does not send your entries, photos, or memos to Google for ads.";
 "profile.privacy.delete" = "Deleting an entry hides it from the archive and removes its stored image files when possible.";
+"profile.ad.banner.accessibility_label" = "Advertisement";
+"profile.ad.banner.accessibility_hint" = "Sponsored banner.";
 
 "onboarding.page1.title" = "One photo a day is enough";
 "onboarding.page1.message" = "You do not need to write a lot. Start with one photo that represents today.";
