@@ -10,6 +10,7 @@ final class CloudKitSyncServiceTests: XCTestCase {
     private var imageStorageService: ImageStorageService!
     private var appSettingsRepository: AppSettingsRepository!
     private var remoteStore: FakeCloudSyncRemoteStore!
+    private var remoteStoreFactoryCallCount = 0
 
     override func setUp() async throws {
         try await super.setUp()
@@ -26,6 +27,7 @@ final class CloudKitSyncServiceTests: XCTestCase {
         imageStorageService = ImageStorageService(entriesDirectoryURL: entriesDirectory)
         appSettingsRepository = AppSettingsRepository(store: store)
         remoteStore = FakeCloudSyncRemoteStore()
+        remoteStoreFactoryCallCount = 0
         try await seed()
     }
 
@@ -35,6 +37,7 @@ final class CloudKitSyncServiceTests: XCTestCase {
         }
 
         remoteStore = nil
+        remoteStoreFactoryCallCount = 0
         appSettingsRepository = nil
         imageStorageService = nil
         entryRepository = nil
@@ -158,6 +161,7 @@ final class CloudKitSyncServiceTests: XCTestCase {
         let activeEntries = try await entryRepository.fetchAllActiveEntries()
 
         XCTAssertEqual(activeEntries.map(\.localDateString), ["2026-05-16"])
+        XCTAssertEqual(remoteStoreFactoryCallCount, 0)
         XCTAssertEqual(remoteStore.accountStateCallCount, 0)
         XCTAssertTrue(remoteStore.savedEntries.isEmpty)
         XCTAssertTrue(remoteStore.savedMedia.isEmpty)
@@ -186,6 +190,7 @@ final class CloudKitSyncServiceTests: XCTestCase {
 
         XCTAssertEqual(rawEntries.map(\.localDateString), ["2026-05-17"])
         XCTAssertEqual(rawEntries.first?.isDeleted, true)
+        XCTAssertEqual(remoteStoreFactoryCallCount, 0)
         XCTAssertEqual(remoteStore.accountStateCallCount, 0)
         XCTAssertTrue(remoteStore.savedEntries.isEmpty)
         XCTAssertTrue(remoteStore.savedMedia.isEmpty)
@@ -195,6 +200,15 @@ final class CloudKitSyncServiceTests: XCTestCase {
         } else {
             XCTFail("Expected disabled status, got \(status.state)")
         }
+    }
+
+    func testLatestStatusDoesNotInstantiateRemoteStoreForPolicyRendering() async {
+        let service = makeService()
+        let status = await service.latestStatus()
+
+        XCTAssertEqual(status, .idle)
+        XCTAssertEqual(remoteStoreFactoryCallCount, 0)
+        XCTAssertEqual(remoteStore.accountStateCallCount, 0)
     }
 
     @MainActor
@@ -255,7 +269,10 @@ final class CloudKitSyncServiceTests: XCTestCase {
 
     private func makeService() -> CloudKitSyncService {
         CloudKitSyncService(
-            remoteStore: remoteStore,
+            remoteStoreFactory: {
+                self.remoteStoreFactoryCallCount += 1
+                return self.remoteStore
+            },
             entryRepository: entryRepository,
             imageStorageService: imageStorageService,
             appSettingsRepository: appSettingsRepository,

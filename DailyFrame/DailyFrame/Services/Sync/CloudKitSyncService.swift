@@ -11,22 +11,23 @@ actor CloudKitSyncService {
         var skippedMediaCount = 0
     }
 
-    private let remoteStore: CloudSyncRemoteStore
+    private let remoteStoreFactory: () -> CloudSyncRemoteStore
     private let entryRepository: EntryRepository
     private let imageStorageService: ImageStorageService
     private let appSettingsRepository: AppSettingsRepository
     private let nowProvider: () -> Date
+    private var cachedRemoteStore: CloudSyncRemoteStore?
     private var status: CloudSyncStatus = .idle
     private var isSyncing = false
 
     init(
-        remoteStore: CloudSyncRemoteStore = CloudKitRemoteStore(),
+        remoteStoreFactory: @escaping () -> CloudSyncRemoteStore = { CloudKitRemoteStore() },
         entryRepository: EntryRepository = EntryRepository(),
         imageStorageService: ImageStorageService = ImageStorageService(),
         appSettingsRepository: AppSettingsRepository = AppSettingsRepository(),
         nowProvider: @escaping () -> Date = { .now }
     ) {
-        self.remoteStore = remoteStore
+        self.remoteStoreFactory = remoteStoreFactory
         self.entryRepository = entryRepository
         self.imageStorageService = imageStorageService
         self.appSettingsRepository = appSettingsRepository
@@ -64,6 +65,7 @@ actor CloudKitSyncService {
             }
 
             status = .syncing(previous: status)
+            let remoteStore = remoteStoreForAllowedSync()
 
             let accountState = try await remoteStore.accountState()
 
@@ -89,7 +91,11 @@ actor CloudKitSyncService {
 
             let remoteEntries = try await remoteStore.fetchEntries()
             let remoteMedia = try await remoteStore.fetchMedia()
-            let summary = try await merge(remoteEntries: remoteEntries, remoteMedia: remoteMedia)
+            let summary = try await merge(
+                remoteStore: remoteStore,
+                remoteEntries: remoteEntries,
+                remoteMedia: remoteMedia
+            )
 
             status = CloudSyncStatus(
                 state: .synced,
@@ -115,7 +121,18 @@ actor CloudKitSyncService {
         return status
     }
 
+    private func remoteStoreForAllowedSync() -> CloudSyncRemoteStore {
+        if let cachedRemoteStore {
+            return cachedRemoteStore
+        }
+
+        let remoteStore = remoteStoreFactory()
+        cachedRemoteStore = remoteStore
+        return remoteStore
+    }
+
     private func merge(
+        remoteStore: CloudSyncRemoteStore,
         remoteEntries: [CloudSyncEntryRecord],
         remoteMedia: [CloudSyncMediaAsset]
     ) async throws -> SyncSummary {
@@ -141,7 +158,7 @@ actor CloudKitSyncService {
                         $0.localDateString == localDateString
                     }
                 } else if shouldLocalUpload(localEntry, over: remoteEntry) {
-                    try await uploadLocalEntry(localEntry, summary: &summary)
+                    try await uploadLocalEntry(localEntry, remoteStore: remoteStore, summary: &summary)
                 }
             } else if let remoteEntry {
                 try await applyRemoteEntry(
@@ -154,7 +171,7 @@ actor CloudKitSyncService {
                     $0.localDateString == localDateString
                 }
             } else if let localEntry {
-                try await uploadLocalEntry(localEntry, summary: &summary)
+                try await uploadLocalEntry(localEntry, remoteStore: remoteStore, summary: &summary)
             }
         }
 
@@ -221,7 +238,11 @@ actor CloudKitSyncService {
         summary.downloadedEntryCount += 1
     }
 
-    private func uploadLocalEntry(_ entry: DailyPhotoEntry, summary: inout SyncSummary) async throws {
+    private func uploadLocalEntry(
+        _ entry: DailyPhotoEntry,
+        remoteStore: CloudSyncRemoteStore,
+        summary: inout SyncSummary
+    ) async throws {
         let record = CloudSyncEntryRecord(entry: entry)
         try await remoteStore.save(entry: record)
         summary.uploadedEntryCount += 1
@@ -235,6 +256,7 @@ actor CloudKitSyncService {
             reference: entry.imageLocalPath,
             updatedAtUTC: entry.updatedAtUTC,
             localDateString: entry.localDateString,
+            remoteStore: remoteStore,
             summary: &summary
         )
 
@@ -244,6 +266,7 @@ actor CloudKitSyncService {
                 reference: thumbnailLocalPath,
                 updatedAtUTC: entry.updatedAtUTC,
                 localDateString: entry.localDateString,
+                remoteStore: remoteStore,
                 summary: &summary
             )
         }
@@ -254,6 +277,7 @@ actor CloudKitSyncService {
         reference: String,
         updatedAtUTC: Date,
         localDateString: String,
+        remoteStore: CloudSyncRemoteStore,
         summary: inout SyncSummary
     ) async throws {
         let fileName = imageStorageService.normalizedMediaReference(for: reference)
