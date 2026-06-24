@@ -4,7 +4,7 @@ struct RootView: View {
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @State private var selectedTab: AppTab = .home
-    @State private var didStartLaunchMediaMaintenance = false
+    @State private var didStartLaunchSync = false
 
     var body: some View {
         Group {
@@ -29,7 +29,7 @@ struct RootView: View {
         .task {
             try? await BootstrapService().seedDefaultsIfNeeded()
             await refreshWidgetSnapshot()
-            startLaunchMediaMaintenanceIfNeeded()
+            startLaunchSyncIfNeeded()
         }
         .onOpenURL { url in
             handleDeepLink(url)
@@ -39,18 +39,21 @@ struct RootView: View {
 
             Task {
                 await refreshWidgetSnapshot()
+                await CloudKitSyncService.shared.synchronize(trigger: .foreground)
+                await refreshWidgetSnapshot()
             }
         }
     }
 
-    private func startLaunchMediaMaintenanceIfNeeded() {
-        guard didStartLaunchMediaMaintenance == false else {
+    private func startLaunchSyncIfNeeded() {
+        guard didStartLaunchSync == false else {
             return
         }
 
-        didStartLaunchMediaMaintenance = true
+        didStartLaunchSync = true
         Task.detached(priority: .background) {
             _ = await ImageStorageService().performLaunchMaintenance()
+            await CloudKitSyncService.shared.synchronize(trigger: .launch)
         }
     }
 

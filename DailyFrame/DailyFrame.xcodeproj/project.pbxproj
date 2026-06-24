@@ -14,6 +14,7 @@
 		C0D690022FAB910000000001 /* EntryRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D690122FAB910000000001 /* EntryRepositoryTests.swift */; };
 		C0D690032FAB910000000001 /* MissionServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D690132FAB910000000001 /* MissionServiceTests.swift */; };
 		C0D690042FAB910000000001 /* HomeProfileStreakContractTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D690142FAB910000000001 /* HomeProfileStreakContractTests.swift */; };
+		C0D690052FAB910000000001 /* CloudKitSyncServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D690152FAB910000000001 /* CloudKitSyncServiceTests.swift */; };
 		DFAAD0012FC100000000001 /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = DFAAD0032FC100000000001 /* GoogleMobileAds */; };
 		DFAAD0022FC100000000001 /* GoogleUserMessagingPlatform in Frameworks */ = {isa = PBXBuildFile; productRef = DFAAD0042FC100000000001 /* GoogleUserMessagingPlatform */; };
 		DFA0000C2FB000000000001 /* DailyFrameWidget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = DFA000012FB000000000001 /* DailyFrameWidget.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -60,6 +61,7 @@
 		C0D690122FAB910000000001 /* EntryRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntryRepositoryTests.swift; sourceTree = "<group>"; };
 		C0D690132FAB910000000001 /* MissionServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MissionServiceTests.swift; sourceTree = "<group>"; };
 		C0D690142FAB910000000001 /* HomeProfileStreakContractTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeProfileStreakContractTests.swift; sourceTree = "<group>"; };
+		C0D690152FAB910000000001 /* CloudKitSyncServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudKitSyncServiceTests.swift; sourceTree = "<group>"; };
 		DFA000012FB000000000001 /* DailyFrameWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = DailyFrameWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -144,6 +146,7 @@
 				C0D690142FAB910000000001 /* HomeProfileStreakContractTests.swift */,
 				C0D690132FAB910000000001 /* MissionServiceTests.swift */,
 				BBD0000F2FAB900000000001 /* BackupExportTests.swift */,
+				C0D690152FAB910000000001 /* CloudKitSyncServiceTests.swift */,
 				BBD000012FAB900000000001 /* StreakServiceTests.swift */,
 			);
 			path = DailyFrameTests;
@@ -313,6 +316,7 @@
 				C0D690042FAB910000000001 /* HomeProfileStreakContractTests.swift in Sources */,
 				C0D690032FAB910000000001 /* MissionServiceTests.swift in Sources */,
 				BBD000102FAB900000000001 /* BackupExportTests.swift in Sources */,
+				C0D690052FAB910000000001 /* CloudKitSyncServiceTests.swift in Sources */,
 				BBD000022FAB900000000001 /* StreakServiceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -586,6 +590,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mabataki.smithwrld999.DailyFrameTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -610,6 +615,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mabataki.smithwrld999.DailyFrameTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
