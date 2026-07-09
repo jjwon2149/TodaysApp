@@ -2,9 +2,14 @@ import SwiftUI
 
 struct HomeView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Binding private var shouldPromptFirstRecordAfterOnboarding: Bool
 
     @StateObject private var viewModel = HomeViewModel()
     @State private var isPresentingEditor = false
+
+    init(shouldPromptFirstRecordAfterOnboarding: Binding<Bool>) {
+        self._shouldPromptFirstRecordAfterOnboarding = shouldPromptFirstRecordAfterOnboarding
+    }
 
     var body: some View {
         NavigationStack {
@@ -21,8 +26,10 @@ struct HomeView: View {
             }
             .background(AppTheme.Colors.background)
             .navigationBarTitleDisplayMode(.inline)
-            .task {
+            .task(id: shouldPromptFirstRecordAfterOnboarding) {
                 await viewModel.load()
+                await Task.yield()
+                presentFirstRecordPromptIfNeeded()
             }
             .refreshable {
                 await viewModel.load()
@@ -33,6 +40,19 @@ struct HomeView: View {
                 }
             }
         }
+    }
+
+    private func presentFirstRecordPromptIfNeeded() {
+        guard shouldPromptFirstRecordAfterOnboarding else {
+            return
+        }
+
+        shouldPromptFirstRecordAfterOnboarding = false
+        guard viewModel.todayEntry == nil else {
+            return
+        }
+
+        isPresentingEditor = true
     }
 
     private var headerSection: some View {
@@ -240,6 +260,8 @@ struct HomeView: View {
                     Button(action: { isPresentingEditor = true }) {
                         Label("home.empty.button", systemImage: "photo.fill.on.rectangle.fill")
                             .font(.system(.headline, design: .rounded, weight: .semibold))
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 18)
                             .background(AppTheme.Colors.brandGradient)
@@ -277,9 +299,35 @@ struct HomeView: View {
 
             if viewModel.recentEntries.isEmpty {
                 AppCard {
-                    Text("home.recent.empty")
-                        .font(.system(.subheadline, design: .rounded))
-                        .foregroundStyle(AppTheme.Colors.textSecondary)
+                    VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
+                        Label {
+                            Text("home.recent.empty.title")
+                                .font(.system(.body, design: .rounded, weight: .semibold))
+                                .fixedSize(horizontal: false, vertical: true)
+                        } icon: {
+                            Image(systemName: "clock.badge.questionmark")
+                                .foregroundStyle(AppTheme.Colors.accent)
+                                .accessibilityHidden(true)
+                        }
+
+                        Text("home.recent.empty.subtitle")
+                            .font(.system(.subheadline, design: .rounded))
+                            .foregroundStyle(AppTheme.Colors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        Button(action: { isPresentingEditor = true }) {
+                            Label("home.recent.empty.button", systemImage: "camera.fill")
+                                .font(.system(.headline, design: .rounded, weight: .semibold))
+                                .multilineTextAlignment(.center)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 14)
+                                .background(AppTheme.Colors.secondaryAccent)
+                                .foregroundStyle(AppTheme.Colors.textPrimary)
+                                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                        }
+                        .accessibilityHint(Text("home.recent.empty.button.accessibility_hint"))
+                    }
                 }
             } else {
                 HStack(spacing: AppTheme.Spacing.small) {

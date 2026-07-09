@@ -3,6 +3,7 @@ import SwiftUI
 struct RootView: View {
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+    @AppStorage("shouldPromptFirstRecordAfterOnboarding") private var shouldPromptFirstRecordAfterOnboarding = false
     @State private var selectedTab: AppTab = .home
     @State private var didStartLaunchMediaMaintenance = false
 
@@ -20,7 +21,8 @@ struct RootView: View {
                 }
                 .tint(AppTheme.Colors.accent)
             } else {
-                OnboardingView {
+                OnboardingView { shouldPromptFirstRecord in
+                    shouldPromptFirstRecordAfterOnboarding = shouldPromptFirstRecord
                     hasCompletedOnboarding = true
                 }
             }
@@ -76,7 +78,7 @@ struct RootView: View {
     private func tabView(for tab: AppTab) -> some View {
         switch tab {
         case .home:
-            HomeView()
+            HomeView(shouldPromptFirstRecordAfterOnboarding: $shouldPromptFirstRecordAfterOnboarding)
         case .calendar:
             CalendarView()
         case .profile:

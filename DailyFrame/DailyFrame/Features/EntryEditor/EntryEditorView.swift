@@ -1,10 +1,10 @@
 import PhotosUI
 import SwiftUI
 import UIKit
+import UserNotifications
 
 struct EntryEditorView: View {
     let existingEntry: DailyPhotoEntry?
-    let completionActionTitle: String
     let onSaved: () async -> Void
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -14,6 +14,9 @@ struct EntryEditorView: View {
     @State private var isPresentingCamera = false
     @State private var didNotifySaved = false
     @State private var isSavedNotificationInFlight = false
+    @State private var isReminderActionInFlight = false
+    @State private var reminderStatusMessage: String?
+    @State private var isShowingSavedEntry = false
 
     init(
         existingEntry: DailyPhotoEntry?,
@@ -21,7 +24,6 @@ struct EntryEditorView: View {
         onSaved: @escaping () async -> Void
     ) {
         self.existingEntry = existingEntry
-        self.completionActionTitle = completionActionTitle
         self.onSaved = onSaved
         _viewModel = StateObject(wrappedValue: EntryEditorViewModel(existingEntry: existingEntry))
     }
@@ -32,13 +34,14 @@ struct EntryEditorView: View {
                 if let completionSummary = viewModel.completionSummary {
                     EntryCompletionView(
                         summary: completionSummary,
-                        actionTitle: completionActionTitle,
                         isActionDisabled: shouldHoldCompletionDismissal,
-                        isActionInFlight: isSavedNotificationInFlight
-                    ) {
+                        isSavedActionInFlight: isSavedNotificationInFlight,
+                        isReminderActionInFlight: isReminderActionInFlight,
+                        reminderStatusMessage: reminderStatusMessage,
+                        canOpenSavedEntry: viewModel.savedEntry != nil
+                    ) { action in
                         Task {
-                            await notifySavedOnce()
-                            dismiss()
+                            await handleCompletionAction(action)
                         }
                     }
                 } else {
@@ -67,6 +70,13 @@ struct EntryEditorView: View {
             } message: {
                 Text(viewModel.errorMessage ?? "")
             }
+            .navigationDestination(isPresented: $isShowingSavedEntry) {
+                if let entry = viewModel.savedEntry {
+                    EntryDetailView(entry: entry) {
+                        await onSaved()
+                    }
+                }
+            }
         }
         .interactiveDismissDisabled(viewModel.isSaving || shouldHoldCompletionDismissal)
     }
@@ -75,10 +85,10 @@ struct EntryEditorView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: AppTheme.Spacing.large) {
                 previewSection
-                memoSection
-                moodSection
                 saveStatusSection
                 saveSection
+                memoSection
+                moodSection
             }
             .padding(AppTheme.Spacing.medium)
             .disabled(viewModel.isSaving)
@@ -194,7 +204,10 @@ struct EntryEditorView: View {
                 Text("editor.saving")
                     .font(.system(.headline, design: .rounded, weight: .semibold))
                     .foregroundStyle(Color.white)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
             }
+            .padding(AppTheme.Spacing.medium)
         }
     }
 
@@ -227,8 +240,7 @@ struct EntryEditorView: View {
     private var memoSection: some View {
         AppCard {
             VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
-                Text("editor.memo.title")
-                    .font(.system(.headline, design: .rounded, weight: .semibold))
+                optionalSectionHeader(titleKey: "editor.memo.title")
 
                 TextField(L10n.string("editor.memo.placeholder"), text: $viewModel.memo, axis: .vertical)
                     .textFieldStyle(.plain)
@@ -245,8 +257,7 @@ struct EntryEditorView: View {
     private var moodSection: some View {
         AppCard {
             VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
-                Text("editor.mood.title")
-                    .font(.system(.headline, design: .rounded, weight: .semibold))
+                optionalSectionHeader(titleKey: "editor.mood.title")
 
                 LazyVGrid(columns: moodColumns, spacing: 10) {
                     ForEach(viewModel.moodOptions) { mood in
@@ -305,7 +316,7 @@ struct EntryEditorView: View {
 
         if let errorMessage = viewModel.errorMessage {
             return EntryEditorSaveStatus(
-                message: errorMessage,
+                message: L10n.format("editor.status.error_recovery", errorMessage),
                 symbolName: "exclamationmark.triangle.fill",
                 tint: Color.red,
                 background: Color.red.opacity(0.10)
@@ -366,7 +377,24 @@ struct EntryEditorView: View {
     }
 
     private var isSaveButtonDisabled: Bool {
-        viewModel.isSaving || viewModel.hasPhoto == false
+        viewModel.canSave == false
+    }
+
+    private func optionalSectionHeader(titleKey: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: AppTheme.Spacing.small) {
+            Text(titleKey)
+                .font(.system(.headline, design: .rounded, weight: .semibold))
+
+            Text("editor.field.optional")
+                .font(.system(.caption, design: .rounded, weight: .bold))
+                .foregroundStyle(AppTheme.Colors.textSecondary)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
+                .background(AppTheme.Colors.muted)
+                .clipShape(Capsule())
+
+            Spacer(minLength: 0)
+        }
     }
 
     private var shouldHoldCompletionDismissal: Bool {
@@ -383,6 +411,81 @@ struct EntryEditorView: View {
 
         await onSaved()
     }
+
+    @MainActor
+    private func handleCompletionAction(_ action: EntryCompletionAction) async {
+        switch action {
+        case .reminder:
+            await requestTomorrowReminder()
+        case .calendar:
+            await notifySavedOnce()
+            guard viewModel.savedEntry != nil else { return }
+            isShowingSavedEntry = true
+        case .skip:
+            await notifySavedOnce()
+            dismiss()
+        }
+    }
+
+    @MainActor
+    private func requestTomorrowReminder() async {
+        guard isReminderActionInFlight == false else { return }
+
+        await notifySavedOnce()
+        isReminderActionInFlight = true
+        reminderStatusMessage = nil
+        defer { isReminderActionInFlight = false }
+
+        let notificationService = NotificationService()
+        let settingsRepository = AppSettingsRepository()
+        let reminderHour = 21
+        let reminderMinute = 0
+
+        do {
+            let status = try await notificationService.requestAuthorizationIfNeeded()
+
+            guard Self.canScheduleNotification(for: status) else {
+                notificationService.cancelDailyReminder()
+                try? await settingsRepository.updateNotificationSettings(
+                    reminderEnabled: false,
+                    reminderHour: reminderHour,
+                    reminderMinute: reminderMinute,
+                    notificationsPermissionPrompted: true
+                )
+                reminderStatusMessage = L10n.string("editor.completion.reminder_denied")
+                return
+            }
+
+            try await notificationService.scheduleDailyReminder(hour: reminderHour, minute: reminderMinute)
+            try await settingsRepository.updateNotificationSettings(
+                reminderEnabled: true,
+                reminderHour: reminderHour,
+                reminderMinute: reminderMinute,
+                notificationsPermissionPrompted: true
+            )
+            reminderStatusMessage = L10n.string("editor.completion.reminder_enabled")
+        } catch {
+            notificationService.cancelDailyReminder()
+            try? await settingsRepository.updateNotificationSettings(
+                reminderEnabled: false,
+                reminderHour: reminderHour,
+                reminderMinute: reminderMinute,
+                notificationsPermissionPrompted: true
+            )
+            reminderStatusMessage = L10n.string("editor.completion.reminder_failed")
+        }
+    }
+
+    private static func canScheduleNotification(for status: UNAuthorizationStatus) -> Bool {
+        switch status {
+        case .authorized, .provisional, .ephemeral:
+            return true
+        case .denied, .notDetermined:
+            return false
+        @unknown default:
+            return false
+        }
+    }
 }
 
 private struct EntryEditorSaveStatus {
@@ -390,6 +493,12 @@ private struct EntryEditorSaveStatus {
     let symbolName: String
     let tint: Color
     let background: Color
+}
+
+private enum EntryCompletionAction {
+    case reminder
+    case calendar
+    case skip
 }
 
 private struct KeyboardDismissTapHandler: UIViewRepresentable {
@@ -468,17 +577,19 @@ private struct EntryCompletionView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     let summary: EntryCompletionSummary
-    let actionTitle: String
     let isActionDisabled: Bool
-    let isActionInFlight: Bool
-    let onAction: () -> Void
+    let isSavedActionInFlight: Bool
+    let isReminderActionInFlight: Bool
+    let reminderStatusMessage: String?
+    let canOpenSavedEntry: Bool
+    let onAction: (EntryCompletionAction) -> Void
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: AppTheme.Spacing.large) {
                 headerSection
                 rewardSection
-                actionButton
+                actionSection
             }
             .padding(AppTheme.Spacing.medium)
         }
@@ -539,27 +650,81 @@ private struct EntryCompletionView: View {
         }
     }
 
-    private var actionButton: some View {
-        Button(action: onAction) {
+    private var actionSection: some View {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
+            completionButton(
+                title: isReminderActionInFlight ? L10n.string("editor.completion.reminder_requesting") : L10n.string("editor.completion.reminder_action"),
+                symbolName: "bell.badge.fill",
+                style: .primary,
+                isDisabled: isActionDisabled || isReminderActionInFlight,
+                isInFlight: isReminderActionInFlight
+            ) {
+                onAction(.reminder)
+            }
+            .accessibilityHint(Text("editor.completion.reminder_action.accessibility_hint"))
+
+            completionButton(
+                title: L10n.string("editor.completion.calendar_action"),
+                symbolName: "calendar",
+                style: .secondary,
+                isDisabled: isActionDisabled || canOpenSavedEntry == false,
+                isInFlight: isSavedActionInFlight
+            ) {
+                onAction(.calendar)
+            }
+            .accessibilityHint(Text("editor.completion.calendar_action.accessibility_hint"))
+
+            Button {
+                onAction(.skip)
+            } label: {
+                Text(isSavedActionInFlight ? L10n.string("editor.completion.returning") : L10n.string("editor.completion.skip_action"))
+                    .font(.system(.headline, design: .rounded, weight: .semibold))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .foregroundStyle(isActionDisabled ? AppTheme.Colors.textSecondary : AppTheme.Colors.textPrimary)
+            }
+            .disabled(isActionDisabled)
+            .accessibilityHint(Text("editor.completion.skip_action.accessibility_hint"))
+
+            if let reminderStatusMessage {
+                Label(reminderStatusMessage, systemImage: "bell")
+                    .font(.system(.footnote, design: .rounded, weight: .medium))
+                    .foregroundStyle(AppTheme.Colors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, AppTheme.Spacing.small)
+            }
+        }
+    }
+
+    private func completionButton(
+        title: String,
+        symbolName: String,
+        style: CompletionButtonStyle,
+        isDisabled: Bool,
+        isInFlight: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
             HStack(spacing: AppTheme.Spacing.small) {
-                if isActionInFlight {
+                if isInFlight {
                     ProgressView()
-                        .tint(AppTheme.Colors.onAccent)
+                        .tint(style.progressTint)
                 } else {
-                    Image(systemName: "house.fill")
+                    Image(systemName: symbolName)
                 }
 
-                Text(isActionInFlight ? L10n.string("editor.completion.returning") : actionTitle)
+                Text(title)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .font(.system(.headline, design: .rounded, weight: .semibold))
             .frame(maxWidth: .infinity)
             .padding(.vertical, 18)
-            .background(isActionDisabled ? AppTheme.Colors.muted : AppTheme.Colors.accent)
-            .foregroundStyle(isActionDisabled ? AppTheme.Colors.textSecondary : AppTheme.Colors.onAccent)
+            .background(isDisabled ? AppTheme.Colors.muted : style.background)
+            .foregroundStyle(isDisabled ? AppTheme.Colors.textSecondary : style.foreground)
             .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         }
-        .disabled(isActionDisabled)
-        .accessibilityHint(Text("editor.completion.action.accessibility_hint"))
+        .disabled(isDisabled)
     }
 
     private func completionRow(title: String, value: String, symbol: String, tint: Color) -> some View {
@@ -602,6 +767,38 @@ private struct EntryCompletionView: View {
                 .font(.system(.headline, design: .rounded, weight: .bold))
                 .foregroundStyle(AppTheme.Colors.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private enum CompletionButtonStyle {
+        case primary
+        case secondary
+
+        var background: Color {
+            switch self {
+            case .primary:
+                return AppTheme.Colors.accent
+            case .secondary:
+                return AppTheme.Colors.secondaryAccent
+            }
+        }
+
+        var foreground: Color {
+            switch self {
+            case .primary:
+                return AppTheme.Colors.onAccent
+            case .secondary:
+                return AppTheme.Colors.textPrimary
+            }
+        }
+
+        var progressTint: Color {
+            switch self {
+            case .primary:
+                return AppTheme.Colors.onAccent
+            case .secondary:
+                return AppTheme.Colors.accent
+            }
         }
     }
 }

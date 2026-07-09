@@ -59,6 +59,8 @@ struct CalendarView: View {
                         }
                     }
 
+                    monthStateSection
+
                     AppCard {
                         VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
                             Text("calendar.legend.title")
@@ -81,6 +83,66 @@ struct CalendarView: View {
             }
             .refreshable {
                 await viewModel.loadMonth()
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var monthStateSection: some View {
+        if viewModel.errorMessage != nil {
+            AppCard {
+                VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
+                    Label {
+                        Text("calendar.error.title")
+                            .font(.system(.body, design: .rounded, weight: .semibold))
+                            .fixedSize(horizontal: false, vertical: true)
+                    } icon: {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(AppTheme.Colors.accent)
+                            .accessibilityHidden(true)
+                    }
+
+                    Text("calendar.error.recovery")
+                        .font(.system(.subheadline, design: .rounded))
+                        .foregroundStyle(AppTheme.Colors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Button {
+                        Task {
+                            await viewModel.loadMonth()
+                        }
+                    } label: {
+                        Label("calendar.error.retry", systemImage: "arrow.clockwise")
+                            .font(.system(.headline, design: .rounded, weight: .semibold))
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(AppTheme.Colors.secondaryAccent)
+                            .foregroundStyle(AppTheme.Colors.textPrimary)
+                            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    }
+                    .accessibilityHint(Text("calendar.error.retry.accessibility_hint"))
+                }
+            }
+        } else if viewModel.entryCount == 0 {
+            AppCard {
+                VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
+                    Label {
+                        Text("calendar.empty.title")
+                            .font(.system(.body, design: .rounded, weight: .semibold))
+                            .fixedSize(horizontal: false, vertical: true)
+                    } icon: {
+                        Image(systemName: "calendar.badge.plus")
+                            .foregroundStyle(AppTheme.Colors.accent)
+                            .accessibilityHidden(true)
+                    }
+
+                    Text("calendar.empty.subtitle")
+                        .font(.system(.subheadline, design: .rounded))
+                        .foregroundStyle(AppTheme.Colors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
         }
     }

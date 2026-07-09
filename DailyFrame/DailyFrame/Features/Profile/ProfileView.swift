@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ProfileView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.openURL) private var openURL
 
     @StateObject private var viewModel = ProfileViewModel()
 
@@ -20,10 +21,17 @@ struct ProfileView: View {
                                 .fixedSize(horizontal: false, vertical: true)
 
                             if let profileStatsStatusMessage = viewModel.profileStatsStatusMessage {
-                                Text(profileStatsStatusMessage)
-                                    .font(.system(.footnote, design: .rounded))
-                                    .foregroundStyle(AppTheme.Colors.textSecondary)
-                                    .fixedSize(horizontal: false, vertical: true)
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(profileStatsStatusMessage)
+                                        .font(.system(.footnote, design: .rounded, weight: .medium))
+                                        .foregroundStyle(AppTheme.Colors.accent)
+                                        .fixedSize(horizontal: false, vertical: true)
+
+                                    Text("profile.stats.error_recovery")
+                                        .font(.system(.footnote, design: .rounded))
+                                        .foregroundStyle(AppTheme.Colors.textSecondary)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
                             }
                         }
                     }
@@ -123,14 +131,55 @@ struct ProfileView: View {
                     .foregroundStyle(AppTheme.Colors.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
 
+                if isNotificationStatusLoading {
+                    ProgressView()
+                        .tint(AppTheme.Colors.accent)
+                        .accessibilityLabel(Text("profile.notification.status.loading"))
+                }
+
                 if let errorMessage = viewModel.errorMessage {
-                    Text(errorMessage)
-                        .font(.system(.footnote, design: .rounded, weight: .medium))
-                        .foregroundStyle(AppTheme.Colors.accent)
-                        .fixedSize(horizontal: false, vertical: true)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(errorMessage)
+                            .font(.system(.footnote, design: .rounded, weight: .medium))
+                            .foregroundStyle(AppTheme.Colors.accent)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        Text("profile.notification.error_recovery")
+                            .font(.system(.footnote, design: .rounded))
+                            .foregroundStyle(AppTheme.Colors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                if shouldShowNotificationSettingsRecovery {
+                    Button {
+                        if let settingsURL = URL(string: "app-settings:") {
+                            openURL(settingsURL)
+                        }
+                    } label: {
+                        Label("profile.notification.action.open_settings", systemImage: "gearshape.fill")
+                            .font(.system(.body, design: .rounded, weight: .semibold))
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(AppTheme.Colors.secondaryAccent)
+                            .foregroundStyle(AppTheme.Colors.textPrimary)
+                            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    }
+                    .accessibilityHint(Text("profile.notification.action.open_settings.accessibility_hint"))
                 }
             }
         }
+    }
+
+    private var isNotificationStatusLoading: Bool {
+        viewModel.isUpdatingReminder || viewModel.notificationStatusMessage == L10n.string("profile.notification.status.loading")
+    }
+
+    private var shouldShowNotificationSettingsRecovery: Bool {
+        viewModel.notificationStatusMessage == L10n.string("profile.notification.status.denied") ||
+            viewModel.errorMessage == L10n.string("profile.notification.permission_denied")
     }
 
     private var notificationToggleRow: some View {

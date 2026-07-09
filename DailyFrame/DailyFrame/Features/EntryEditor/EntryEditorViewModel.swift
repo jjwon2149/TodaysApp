@@ -12,6 +12,7 @@ final class EntryEditorViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published private(set) var isShowingErrorAlert = false
     @Published private(set) var completionSummary: EntryCompletionSummary?
+    @Published private(set) var savedEntry: DailyPhotoEntry?
 
     let moodOptions = MoodLocalization.options
 
@@ -21,6 +22,10 @@ final class EntryEditorViewModel: ObservableObject {
 
     var saveButtonTitle: String {
         existingEntry == nil ? L10n.string("editor.save.new") : L10n.string("editor.save.edit")
+    }
+
+    var canSave: Bool {
+        hasPhoto && isSaving == false
     }
 
     private let existingEntry: DailyPhotoEntry?
@@ -108,6 +113,7 @@ final class EntryEditorViewModel: ObservableObject {
 
         isSaving = true
         completionSummary = nil
+        savedEntry = nil
         defer { isSaving = false }
 
         do {
@@ -175,6 +181,7 @@ final class EntryEditorViewModel: ObservableObject {
 
                 try await entryRepository.upsert(entry)
                 didUpsertEntry = true
+                savedEntry = entry
 
                 let shouldRecordCompletion = isEditingExistingEntry == false
                 let summaryMission: DailyMission
