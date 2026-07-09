@@ -49,6 +49,8 @@ Use a private CloudKit database only.
 ## Offline And iCloud Disabled Policy
 
 - The app stays local-first. Users can create, edit, and delete entries offline.
+- CloudKit sync is explicit opt-in. Launch, foreground, save, and delete hooks must not contact CloudKit or upload entry content/media while the policy is not set up or disabled.
+- Profile/Settings must disclose before opt-in that entries, photos/thumbnails, notes, mood/mission details, and date/timezone metadata may be backed up to the user's private iCloud database.
 - Offline changes are queued by local `updatedAtUTC` and uploaded when the private database is available.
 - If iCloud is disabled, sync is unavailable but local persistence and manual export remain available.
 - The UI should report sync disabled/unavailable without blocking local entry creation or export.

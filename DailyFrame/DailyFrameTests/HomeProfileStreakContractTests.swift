@@ -124,4 +124,23 @@ final class HomeProfileStreakContractTests: DomainTestFixture {
         XCTAssertEqual(homeViewModel.todayMission?.localDateString, "2026-05-07")
         XCTAssertEqual(homeViewModel.isTodayMissionCompleted, false)
     }
+
+    func testBannerPlacementPolicyAllowsOnlyProfileBannerForMVP() {
+        XCTAssertTrue(BannerAdPlacementPolicy.permitsBanner(on: .profile))
+
+        let blockedSurfaces: [BannerAdPlacementPolicy.Surface] = [
+            .home,
+            .calendar,
+            .entryEditor,
+            .cameraCapture,
+            .photoPicker,
+            .saveCompletion,
+            .widget,
+            .immediateDeepLink
+        ]
+
+        for surface in blockedSurfaces {
+            XCTAssertFalse(BannerAdPlacementPolicy.permitsBanner(on: surface))
+        }
+    }
 }

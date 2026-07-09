@@ -236,9 +236,16 @@ struct EntryDetailView: View {
             }
 
             await onChanged()
+            startBackgroundSync()
             dismiss()
         } catch {
             errorMessage = L10n.string("error.entry.delete")
+        }
+    }
+
+    private func startBackgroundSync() {
+        Task.detached(priority: .background) {
+            await CloudKitSyncService.shared.synchronize(trigger: .localChange)
         }
     }
 }

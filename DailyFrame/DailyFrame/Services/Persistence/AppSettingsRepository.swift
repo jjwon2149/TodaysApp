@@ -35,4 +35,23 @@ struct AppSettingsRepository {
 
         return updatedSettings
     }
+
+    func updateICloudSyncPolicy(
+        _ policy: ICloudSyncPolicy,
+        disclosureSeenAtUTC: Date?
+    ) async throws -> AppSettings {
+        var updatedSettings = AppSettings()
+
+        try await store.update { snapshot in
+            snapshot.settings.iCloudSyncPolicy = policy
+
+            if let disclosureSeenAtUTC {
+                snapshot.settings.iCloudSyncDisclosureSeenAtUTC = disclosureSeenAtUTC
+            }
+
+            updatedSettings = snapshot.settings
+        }
+
+        return updatedSettings
+    }
 }

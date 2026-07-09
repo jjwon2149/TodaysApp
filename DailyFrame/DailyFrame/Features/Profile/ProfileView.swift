@@ -9,7 +9,7 @@ struct ProfileView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.large) {
+                VStack(alignment: .leading, spacing: 0) {
                     AppCard {
                         VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
                             Text("profile.header.title")
@@ -35,8 +35,10 @@ struct ProfileView: View {
                             }
                         }
                     }
+                    .profileSectionSpacing()
 
                     summarySection
+                        .profileSectionSpacing()
 
                     if let freezeNoticeText = viewModel.freezeNoticeText {
                         AppCard {
@@ -45,11 +47,17 @@ struct ProfileView: View {
                                 .foregroundStyle(AppTheme.Colors.accent)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
+                        .profileSectionSpacing()
                     }
 
                     notificationSettingsSection
+                        .profileSectionSpacing()
+                    syncSection
+                        .profileSectionSpacing()
                     exportSection
+                        .profileSectionSpacing()
                     privacySection
+                    profileBannerPlacement
                 }
                 .padding(AppTheme.Spacing.medium)
             }
@@ -229,6 +237,85 @@ struct ProfileView: View {
         .accessibilityHint(Text("profile.notification.toggle.accessibility_hint"))
     }
 
+    private var syncSection: some View {
+        AppCard {
+            VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
+                Label {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("profile.sync.title")
+                            .font(.system(.body, design: .rounded, weight: .medium))
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        Text("profile.sync.subtitle")
+                            .font(.system(.footnote, design: .rounded))
+                            .foregroundStyle(AppTheme.Colors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                } icon: {
+                    Image(systemName: "icloud.fill")
+                        .foregroundStyle(AppTheme.Colors.accent)
+                        .frame(width: 28)
+                        .accessibilityHidden(true)
+                }
+
+                Text("profile.sync.disclosure")
+                    .font(.system(.subheadline, design: .rounded))
+                    .foregroundStyle(AppTheme.Colors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Toggle(
+                    isOn: Binding(
+                        get: { viewModel.isCloudSyncEnabled },
+                        set: { isEnabled in
+                            Task {
+                                await viewModel.setICloudSyncEnabled(isEnabled)
+                            }
+                        }
+                    )
+                ) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("profile.sync.toggle")
+                            .font(.system(.body, design: .rounded, weight: .medium))
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        Text("profile.sync.toggle_detail")
+                            .font(.system(.footnote, design: .rounded))
+                            .foregroundStyle(AppTheme.Colors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .disabled(viewModel.isUpdatingSyncPolicy || viewModel.isSyncing)
+                .accessibilityHint(Text("profile.sync.toggle.accessibility_hint"))
+
+                if viewModel.isCloudSyncEnabled {
+                    Button {
+                        Task {
+                            await viewModel.syncNow()
+                        }
+                    } label: {
+                        Label(
+                            viewModel.isSyncing ? L10n.string("profile.sync.syncing") : L10n.string("profile.sync.action"),
+                            systemImage: viewModel.isSyncing ? "arrow.triangle.2.circlepath" : "icloud.and.arrow.up.fill"
+                        )
+                        .font(.system(.headline, design: .rounded, weight: .semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(AppTheme.Colors.textPrimary)
+                        .foregroundStyle(AppTheme.Colors.onAccent)
+                        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    }
+                    .disabled(viewModel.canSyncNow == false)
+                    .accessibilityHint(Text("profile.sync.accessibility_hint"))
+                }
+
+                Text(viewModel.syncStatusMessage)
+                    .font(.system(.footnote, design: .rounded))
+                    .foregroundStyle(AppTheme.Colors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
     private var exportSection: some View {
         AppCard {
             VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
@@ -309,6 +396,11 @@ struct ProfileView: View {
                     .foregroundStyle(AppTheme.Colors.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
 
+                Text("profile.privacy.ads")
+                    .font(.system(.subheadline, design: .rounded))
+                    .foregroundStyle(AppTheme.Colors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
                 Text("profile.privacy.delete")
                     .font(.system(.subheadline, design: .rounded))
                     .foregroundStyle(AppTheme.Colors.textSecondary)
@@ -316,5 +408,31 @@ struct ProfileView: View {
             }
         }
         .accessibilityElement(children: .contain)
+    }
+
+    @ViewBuilder
+    private var profileBannerPlacement: some View {
+        if BannerAdPlacementPolicy.permitsBanner(on: .profile) {
+            ProfileFooterBannerAdPlacement()
+        }
+    }
+}
+
+private struct ProfileFooterBannerAdPlacement: View {
+    @State private var isVisible = false
+
+    var body: some View {
+        BannerAdView { isLoaded in
+            isVisible = isLoaded
+        }
+        .padding(.top, isVisible ? AppTheme.Spacing.large : 0)
+        .accessibilityLabel(Text("profile.ad.banner.accessibility_label"))
+        .accessibilityHint(Text("profile.ad.banner.accessibility_hint"))
+    }
+}
+
+private extension View {
+    func profileSectionSpacing() -> some View {
+        padding(.bottom, AppTheme.Spacing.large)
     }
 }

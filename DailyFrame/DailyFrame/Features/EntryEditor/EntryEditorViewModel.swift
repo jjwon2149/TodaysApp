@@ -209,6 +209,7 @@ final class EntryEditorViewModel: ObservableObject {
                 )
 
                 try? await WidgetSnapshotService().refreshSnapshot()
+                startBackgroundSync()
             } catch {
                 let shouldCleanupCreatedFiles: Bool
 
@@ -280,6 +281,12 @@ final class EntryEditorViewModel: ObservableObject {
 
         for path in paths where deletedPaths.insert(path).inserted {
             try? imageStorageService.deleteFileIfExists(at: path)
+        }
+    }
+
+    private func startBackgroundSync() {
+        Task.detached(priority: .background) {
+            await CloudKitSyncService.shared.synchronize(trigger: .localChange)
         }
     }
 

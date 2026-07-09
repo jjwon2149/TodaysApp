@@ -168,6 +168,27 @@
 "profile.export.accessibility_hint" = "共有できるローカル書き出しパッケージを作成します。";
 "profile.export.status.ready" = "書き出し準備完了: 記録%d件、メディアファイル%d件。";
 "profile.export.status.ready_with_warnings" = "書き出し準備完了: 記録%d件、メディアファイル%d件、manifest警告%d件。";
+"profile.sync.title" = "iCloud同期";
+"profile.sync.subtitle" = "DailyFrameがあなたの非公開iCloudデータベースにバックアップするかを選べます。";
+"profile.sync.disclosure" = "iCloud同期をオンにすると、記録、写真とサムネイル、メモ、気分とミッション、日付/タイムゾーンのメタデータが、あなたの非公開iCloudデータベースにバックアップされる場合があります。";
+"profile.sync.toggle" = "iCloudでバックアップ";
+"profile.sync.toggle_detail" = "オフの間、新しい保存や削除はローカルに残り、書き出しは引き続き使えます。";
+"profile.sync.toggle.accessibility_hint" = "非公開iCloudバックアップをオンまたはオフにします。";
+"profile.sync.action" = "今すぐ同期";
+"profile.sync.syncing" = "同期中...";
+"profile.sync.accessibility_hint" = "ローカルの変更をアップロードし、より新しい非公開iCloud記録を復元します。";
+"profile.sync.status.loading" = "iCloud同期状態を確認中です。";
+"profile.sync.status.not_set_up" = "iCloud同期は未設定です。オンにするまで、ローカル変更はこのデバイスと書き出し内に残ります。";
+"profile.sync.status.disabled" = "iCloud同期はオフです。新しい保存や削除はローカルに残り、手動で書き出せます。";
+"profile.sync.status.idle" = "iCloud同期はオンです。iCloudを利用できるときにローカル変更を自動バックアップします。";
+"profile.sync.status.syncing" = "iCloudと同期中です。";
+"profile.sync.status.synced" = "iCloud同期準備完了。最終更新: %@。";
+"profile.sync.status.synced_with_warnings" = "iCloud同期準備完了。最終更新: %@。確認が必要なメディアファイルが%d件あります。";
+"profile.sync.status.no_account" = "iCloudにサインインしていません。ローカル保存と書き出しは引き続き使え、変更はローカルに残ります。";
+"profile.sync.status.restricted" = "このデバイスではiCloud同期が制限されています。ローカル保存と書き出しは引き続き使え、変更はローカルに残ります。";
+"profile.sync.status.unavailable" = "iCloud同期はオフラインまたは利用できません。ローカル保存と書き出しは引き続き使え、同期が成功するまで変更はローカルに残ります。";
+"profile.sync.status.failed" = "iCloud同期を完了できませんでした。ローカル保存と書き出しは引き続き使え、同期が成功するまで変更はローカルに残ります。";
+"profile.sync.status.just_now" = "たった今";
 "profile.notification.title" = "毎日の記録リマインダー";
 "profile.notification.time" = "通知時刻";
 "profile.notification.time.accessibility_hint" = "毎日の記録リマインダー時刻を設定します。";
@@ -184,9 +205,12 @@
 "profile.notification.error_recovery" = "設定で権限を確認するか、少し後でもう一度オンにしてください。";
 "profile.stats.error_recovery" = "この画面を開き直すかアプリを再起動すると、アーカイブを再計算します。";
 "profile.privacy.title" = "プライバシーと保存";
-"profile.privacy.local_storage" = "記録と写真はこのデバイス内にローカル保存されます。";
+"profile.privacy.local_storage" = "記録と写真はこのデバイス内にローカル保存されます。iCloud同期がオンの場合、記録内容とメディアもあなたの非公開iCloudデータベースにバックアップされることがあります。";
 "profile.privacy.permissions" = "カメラとフォトライブラリへのアクセスは、撮影または写真選択時だけリクエストします。";
+"profile.privacy.ads" = "広告が有効なリリースでは、バナー広告にGoogle AdMobを使用します。DailyFrameは記録、写真、メモを広告目的でGoogleに送信しません。";
 "profile.privacy.delete" = "記録を削除するとアーカイブから非表示にし、可能な場合は保存済み画像ファイルも削除します。";
+"profile.ad.banner.accessibility_label" = "広告";
+"profile.ad.banner.accessibility_hint" = "スポンサー付きバナーです。";
 
 "onboarding.page1.title" = "一日一枚で十分です";
 "onboarding.page1.message" = "長く書かなくても大丈夫です。今日を代表する写真一枚から記録を始めましょう。";
@@ -246,3 +270,4 @@
 "error.notification.time_save" = "通知時刻を保存できませんでした。";
 "error.notification.enable" = "通知をオンにできませんでした。";
 "error.notification.settings_save" = "通知設定を保存できませんでした。";
+"error.sync.policy_save" = "iCloud同期設定を保存できませんでした。";

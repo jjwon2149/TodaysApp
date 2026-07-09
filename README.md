@@ -65,7 +65,7 @@ The code separates user-facing screens from app rules. View models orchestrate r
 - Streak recalculation is covered by unit tests in `DailyFrameTests/StreakServiceTests.swift`.
 - Repeatable feature-complete smoke coverage is defined in `docs/qa-smoke-checklist.md`.
 - UI copy is localized through `Localizable.strings` instead of hard-coded in feature views.
-- Personal media is stored locally; public feed, account system, and backend sync are intentionally out of MVP scope.
+- Personal media is stored locally by default; optional private iCloud sync can be enabled from Profile, while public feed, account system, and non-iCloud backend sync remain out of MVP scope.
 - App Store style screenshots are kept in `AppStoreScreenshots/` so reviewers can understand the product without opening Xcode.
 
 ## Run Locally
@@ -88,7 +88,7 @@ xcodebuild test \
 - [ ] Add richer entry search/filtering in the archive.
 - [ ] Add lightweight weekly review insights.
 - [ ] Expand widget and reminder surfaces.
-- [ ] Add iCloud sync after the local-first MVP is stable.
+- [x] Add opt-in private iCloud sync after the local-first MVP is stable.
 
 ## Repository Workflow
 

@@ -14,7 +14,10 @@
 		C0D690022FAB910000000001 /* EntryRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D690122FAB910000000001 /* EntryRepositoryTests.swift */; };
 		C0D690032FAB910000000001 /* MissionServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D690132FAB910000000001 /* MissionServiceTests.swift */; };
 		C0D690042FAB910000000001 /* HomeProfileStreakContractTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D690142FAB910000000001 /* HomeProfileStreakContractTests.swift */; };
-		C0D690062FAB910000000001 /* GrowthEventLoggerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D690152FAB910000000001 /* GrowthEventLoggerTests.swift */; };
+		C0D690062FAB910000000001 /* GrowthEventLoggerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D690162FAB910000000001 /* GrowthEventLoggerTests.swift */; };
+		C0D690052FAB910000000001 /* CloudKitSyncServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D690152FAB910000000001 /* CloudKitSyncServiceTests.swift */; };
+		DFAAD0012FC100000000001 /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = DFAAD0032FC100000000001 /* GoogleMobileAds */; };
+		DFAAD0022FC100000000001 /* GoogleUserMessagingPlatform in Frameworks */ = {isa = PBXBuildFile; productRef = DFAAD0042FC100000000001 /* GoogleUserMessagingPlatform */; };
 		DFA0000C2FB000000000001 /* DailyFrameWidget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = DFA000012FB000000000001 /* DailyFrameWidget.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
@@ -59,7 +62,8 @@
 		C0D690122FAB910000000001 /* EntryRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntryRepositoryTests.swift; sourceTree = "<group>"; };
 		C0D690132FAB910000000001 /* MissionServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MissionServiceTests.swift; sourceTree = "<group>"; };
 		C0D690142FAB910000000001 /* HomeProfileStreakContractTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeProfileStreakContractTests.swift; sourceTree = "<group>"; };
-		C0D690152FAB910000000001 /* GrowthEventLoggerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GrowthEventLoggerTests.swift; sourceTree = "<group>"; };
+		C0D690162FAB910000000001 /* GrowthEventLoggerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GrowthEventLoggerTests.swift; sourceTree = "<group>"; };
+		C0D690152FAB910000000001 /* CloudKitSyncServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudKitSyncServiceTests.swift; sourceTree = "<group>"; };
 		DFA000012FB000000000001 /* DailyFrameWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = DailyFrameWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -91,6 +95,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DFAAD0012FC100000000001 /* GoogleMobileAds in Frameworks */,
+				DFAAD0022FC100000000001 /* GoogleUserMessagingPlatform in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -140,9 +146,10 @@
 				C0D690112FAB910000000001 /* DomainTestFixture.swift */,
 				C0D690122FAB910000000001 /* EntryRepositoryTests.swift */,
 				C0D690142FAB910000000001 /* HomeProfileStreakContractTests.swift */,
-				C0D690152FAB910000000001 /* GrowthEventLoggerTests.swift */,
+				C0D690162FAB910000000001 /* GrowthEventLoggerTests.swift */,
 				C0D690132FAB910000000001 /* MissionServiceTests.swift */,
 				BBD0000F2FAB900000000001 /* BackupExportTests.swift */,
+				C0D690152FAB910000000001 /* CloudKitSyncServiceTests.swift */,
 				BBD000012FAB900000000001 /* StreakServiceTests.swift */,
 			);
 			path = DailyFrameTests;
@@ -171,6 +178,8 @@
 			);
 			name = DailyFrame;
 			packageProductDependencies = (
+				DFAAD0032FC100000000001 /* GoogleMobileAds */,
+				DFAAD0042FC100000000001 /* GoogleUserMessagingPlatform */,
 			);
 			productName = DailyFrame;
 			productReference = 4AF351A92FAB82320053AF89 /* DailyFrame.app */;
@@ -252,6 +261,10 @@
 			);
 			mainGroup = 4AF351A02FAB82320053AF89;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				DFAAD0052FC100000000001 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */,
+				DFAAD0062FC100000000001 /* XCRemoteSwiftPackageReference "swift-package-manager-google-user-messaging-platform" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 4AF351AA2FAB82320053AF89 /* Products */;
 			projectDirPath = "";
@@ -307,6 +320,7 @@
 				C0D690062FAB910000000001 /* GrowthEventLoggerTests.swift in Sources */,
 				C0D690032FAB910000000001 /* MissionServiceTests.swift in Sources */,
 				BBD000102FAB900000000001 /* BackupExportTests.swift in Sources */,
+				C0D690052FAB910000000001 /* CloudKitSyncServiceTests.swift in Sources */,
 				BBD000022FAB900000000001 /* StreakServiceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -332,6 +346,38 @@
 			targetProxy = DFA0000D2FB000000000001 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		DFAAD0052FC100000000001 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/googleads/swift-package-manager-google-mobile-ads.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 13.5.0;
+			};
+		};
+		DFAAD0062FC100000000001 /* XCRemoteSwiftPackageReference "swift-package-manager-google-user-messaging-platform" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/googleads/swift-package-manager-google-user-messaging-platform.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.1.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		DFAAD0032FC100000000001 /* GoogleMobileAds */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DFAAD0052FC100000000001 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */;
+			productName = GoogleMobileAds;
+		};
+		DFAAD0042FC100000000001 /* GoogleUserMessagingPlatform */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DFAAD0062FC100000000001 /* XCRemoteSwiftPackageReference "swift-package-manager-google-user-messaging-platform" */;
+			productName = GoogleUserMessagingPlatform;
+		};
+/* End XCSwiftPackageProductDependency section */
 
 /* Begin XCBuildConfiguration section */
 		4AF351B22FAB82340053AF89 /* Debug */ = {
@@ -463,6 +509,7 @@
 				CODE_SIGN_ENTITLEMENTS = Config/DailyFrame.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 5;
+				DAILYFRAME_BANNER_AD_UNIT_ID = "ca-app-pub-3940256099942544/2435281174";
 				DEVELOPMENT_TEAM = 2TXBC7N5Q5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -500,6 +547,7 @@
 				CODE_SIGN_ENTITLEMENTS = Config/DailyFrame.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 5;
+				DAILYFRAME_BANNER_AD_UNIT_ID = "ca-app-pub-8712764191402438/7674134559";
 				DEVELOPMENT_TEAM = 2TXBC7N5Q5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -546,6 +594,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mabataki.smithwrld999.DailyFrameTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -570,6 +619,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mabataki.smithwrld999.DailyFrameTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
