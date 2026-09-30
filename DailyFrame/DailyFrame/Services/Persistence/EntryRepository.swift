@@ -42,6 +42,34 @@ struct EntryRepository {
         }
     }
 
+    /// Replaces an entry only while its persisted value still matches the value
+    /// observed by the caller. This keeps a sync result from overwriting an edit
+    /// or tombstone that was written while remote work was in flight.
+    func upsert(
+        _ entry: DailyPhotoEntry,
+        replacing expectedEntry: DailyPhotoEntry?
+    ) async throws -> Bool {
+        var didUpdate = false
+
+        try await store.update { snapshot in
+            let index = snapshot.entries.firstIndex { $0.localDateString == entry.localDateString }
+
+            switch (index, expectedEntry) {
+            case (.none, .none):
+                snapshot.entries.append(entry)
+                didUpdate = true
+            case (.some(let index), .some(let expectedEntry))
+                where Self.entriesMatch(snapshot.entries[index], expectedEntry):
+                snapshot.entries[index] = entry
+                didUpdate = true
+            default:
+                break
+            }
+        }
+
+        return didUpdate
+    }
+
     func setThumbnailLocalPath(
         _ thumbnailLocalPath: String,
         for localDateString: String,
@@ -77,5 +105,22 @@ struct EntryRepository {
             snapshot.entries[index].isDeleted = true
             snapshot.entries[index].updatedAtUTC = .now
         }
+    }
+
+    private static func entriesMatch(_ lhs: DailyPhotoEntry, _ rhs: DailyPhotoEntry) -> Bool {
+        lhs.id == rhs.id
+            && lhs.localDateString == rhs.localDateString
+            && lhs.createdAtUTC == rhs.createdAtUTC
+            && lhs.updatedAtUTC == rhs.updatedAtUTC
+            && lhs.timezoneIdentifier == rhs.timezoneIdentifier
+            && lhs.timezoneOffsetMinutes == rhs.timezoneOffsetMinutes
+            && lhs.imageLocalPath == rhs.imageLocalPath
+            && lhs.thumbnailLocalPath == rhs.thumbnailLocalPath
+            && lhs.memo == rhs.memo
+            && lhs.moodCode == rhs.moodCode
+            && lhs.missionId == rhs.missionId
+            && lhs.missionCompleted == rhs.missionCompleted
+            && lhs.sourceType == rhs.sourceType
+            && lhs.isDeleted == rhs.isDeleted
     }
 }

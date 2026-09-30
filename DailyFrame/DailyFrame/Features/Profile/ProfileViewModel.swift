@@ -387,10 +387,12 @@ final class ProfileViewModel: ObservableObject {
             let timestamp = formattedSyncTimestamp(status.lastSyncedAtUTC)
 
             if status.skippedMediaCount > 0 {
-                return L10n.format("profile.sync.status.synced_with_warnings", timestamp, status.skippedMediaCount)
+                return L10n.string("profile.sync.status.incomplete")
             }
 
             return L10n.format("profile.sync.status.synced", timestamp)
+        case .incomplete:
+            return L10n.string("profile.sync.status.incomplete")
         case .unavailable(let reason):
             switch reason {
             case .noAccount:

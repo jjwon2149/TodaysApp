@@ -605,7 +605,7 @@ private struct EntryCompletionView: View {
                 .foregroundStyle(AppTheme.Colors.success)
 
             VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
-                Text("editor.completion.header")
+                Text(L10n.string(summary.outcome == .created ? "editor.completion.header" : "editor.completion.updated_header"))
                     .font(.system(.largeTitle, design: .rounded, weight: .bold))
                     .foregroundStyle(AppTheme.Colors.textPrimary)
 
@@ -622,30 +622,35 @@ private struct EntryCompletionView: View {
     private var rewardSection: some View {
         AppCard {
             VStack(alignment: .leading, spacing: AppTheme.Spacing.large) {
-                Text("editor.completion.reward_title")
+                Text("editor.completion.details_title")
                     .font(.system(.headline, design: .rounded, weight: .semibold))
                     .foregroundStyle(AppTheme.Colors.textPrimary)
 
                 completionRow(
-                    title: L10n.string("editor.completion.current_streak"),
-                    value: L10n.format("common.days_count", summary.currentStreak),
-                    symbol: "flame.fill",
-                    tint: AppTheme.Colors.accent
-                )
-
-                completionRow(
-                    title: summary.missionTitle,
-                    value: summary.missionCompleted ? L10n.string("editor.completion.mission_complete") : L10n.string("editor.completion.needs_review"),
-                    symbol: "checkmark.seal.fill",
+                    title: L10n.string("editor.completion.save_result"),
+                    value: L10n.string(summary.outcome == .created ? "editor.completion.saved" : "editor.completion.updated"),
+                    symbol: "checkmark.circle.fill",
                     tint: AppTheme.Colors.success
                 )
 
-                completionRow(
-                    title: L10n.string("editor.completion.reward_points"),
-                    value: summary.rewardText,
-                    symbol: "sparkles",
-                    tint: AppTheme.Colors.textPrimary
-                )
+                if let currentStreak = summary.confirmedCurrentStreak {
+                    completionRow(
+                        title: L10n.string("editor.completion.current_streak"),
+                        value: L10n.format("common.days_count", currentStreak),
+                        symbol: "flame.fill",
+                        tint: AppTheme.Colors.accent
+                    )
+                }
+
+                if let missionTitle = summary.missionTitle,
+                   let missionCompleted = summary.missionCompleted {
+                    completionRow(
+                        title: missionTitle,
+                        value: missionCompleted ? L10n.string("editor.completion.mission_complete") : L10n.string("editor.completion.needs_review"),
+                        symbol: "checkmark.seal.fill",
+                        tint: AppTheme.Colors.success
+                    )
+                }
             }
         }
     }

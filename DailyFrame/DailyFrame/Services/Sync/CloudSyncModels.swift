@@ -27,6 +27,7 @@ struct CloudSyncStatus: Equatable {
         case disabled
         case syncing
         case synced
+        case incomplete
         case unavailable(CloudSyncUnavailableReason)
         case failed(String)
     }
@@ -161,4 +162,18 @@ protocol CloudSyncRemoteStore {
     func fetchMedia() async throws -> [CloudSyncMediaAsset]
     func save(entry: CloudSyncEntryRecord) async throws
     func save(media: CloudSyncMediaAsset) async throws
+}
+
+enum CloudSyncRemoteStoreError: LocalizedError {
+    case staleEntryWrite
+    case staleMediaWrite
+
+    var errorDescription: String? {
+        switch self {
+        case .staleEntryWrite:
+            return "The cloud entry changed before this sync could save it."
+        case .staleMediaWrite:
+            return "The cloud media changed before this sync could save it."
+        }
+    }
 }

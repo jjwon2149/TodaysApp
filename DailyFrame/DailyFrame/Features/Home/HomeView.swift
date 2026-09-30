@@ -16,11 +16,31 @@ struct HomeView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: AppTheme.Spacing.large) {
                     headerSection
-                    streakSection
-                    missionSection
-                    todaySection
-                    progressSection
-                    recentSection
+
+                    if viewModel.shouldShowLoadingPlaceholder {
+                        loadingSection
+                    } else if viewModel.shouldShowFullLoadError {
+                        loadErrorSection(isPartial: false)
+                    } else {
+                        if viewModel.shouldShowPartialLoadError {
+                            loadErrorSection(isPartial: true)
+                        }
+                        if viewModel.hasLoadedStreak {
+                            streakSection
+                        }
+                        if viewModel.hasLoadedMission {
+                            missionSection
+                        }
+                        if viewModel.hasLoadedTodayEntry {
+                            todaySection
+                        }
+                        if viewModel.hasLoadedMonthStats {
+                            progressSection
+                        }
+                        if viewModel.hasLoadedRecentEntries {
+                            recentSection
+                        }
+                    }
                 }
                 .padding(AppTheme.Spacing.medium)
             }
@@ -47,6 +67,10 @@ struct HomeView: View {
             return
         }
 
+        guard viewModel.canPresentEntryEditor else {
+            return
+        }
+
         shouldPromptFirstRecordAfterOnboarding = false
         guard viewModel.todayEntry == nil else {
             return
@@ -61,10 +85,12 @@ struct HomeView: View {
                 .font(.system(.title, design: .rounded, weight: .bold))
                 .foregroundStyle(AppTheme.Colors.textPrimary)
 
-            Text(viewModel.headerSubtitle)
-                .font(.system(.subheadline, design: .rounded))
-                .foregroundStyle(AppTheme.Colors.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
+            if viewModel.hasLoadedStreak {
+                Text(viewModel.headerSubtitle)
+                    .font(.system(.subheadline, design: .rounded))
+                    .foregroundStyle(AppTheme.Colors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -142,7 +168,7 @@ struct HomeView: View {
                         .foregroundStyle(AppTheme.Colors.success)
                         .fixedSize(horizontal: false, vertical: true)
                 } else {
-                    Button(action: { isPresentingEditor = true }) {
+                    Button(action: presentEditorIfAvailable) {
                         Label("home.mission.record_button", systemImage: "camera.fill")
                             .font(.system(.headline, design: .rounded, weight: .semibold))
                             .frame(maxWidth: .infinity)
@@ -152,6 +178,7 @@ struct HomeView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
                     }
                     .accessibilityHint(Text("home.mission.record_button.accessibility_hint"))
+                    .disabled(viewModel.canPresentEntryEditor == false)
                 }
             }
             .accessibilityElement(children: .contain)
@@ -219,7 +246,7 @@ struct HomeView: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
 
-                    Button(action: { isPresentingEditor = true }) {
+                    Button(action: presentEditorIfAvailable) {
                         Text("home.entry.edit_button")
                             .font(.system(.headline, design: .rounded, weight: .semibold))
                             .frame(maxWidth: .infinity)
@@ -229,6 +256,7 @@ struct HomeView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
                     }
                     .accessibilityHint(Text("home.entry.edit_button.accessibility_hint"))
+                    .disabled(viewModel.canPresentEntryEditor == false)
                 }
             }
         } else {
@@ -257,7 +285,7 @@ struct HomeView: View {
                         .accessibilityElement(children: .ignore)
                         .accessibilityLabel(Text("home.empty.accessibility_label"))
 
-                    Button(action: { isPresentingEditor = true }) {
+                    Button(action: presentEditorIfAvailable) {
                         Label("home.empty.button", systemImage: "photo.fill.on.rectangle.fill")
                             .font(.system(.headline, design: .rounded, weight: .semibold))
                             .multilineTextAlignment(.center)
@@ -269,6 +297,7 @@ struct HomeView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
                     }
                     .accessibilityHint(Text("home.empty.button.accessibility_hint"))
+                    .disabled(viewModel.canPresentEntryEditor == false)
                 }
             }
         }
@@ -315,7 +344,7 @@ struct HomeView: View {
                             .foregroundStyle(AppTheme.Colors.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
 
-                        Button(action: { isPresentingEditor = true }) {
+                        Button(action: presentEditorIfAvailable) {
                             Label("home.recent.empty.button", systemImage: "camera.fill")
                                 .font(.system(.headline, design: .rounded, weight: .semibold))
                                 .multilineTextAlignment(.center)
@@ -327,6 +356,7 @@ struct HomeView: View {
                                 .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
                         }
                         .accessibilityHint(Text("home.recent.empty.button.accessibility_hint"))
+                        .disabled(viewModel.canPresentEntryEditor == false)
                     }
                 }
             } else {
@@ -342,6 +372,61 @@ struct HomeView: View {
                 }
             }
         }
+    }
+
+    private var loadingSection: some View {
+        AppCard {
+            HStack(spacing: AppTheme.Spacing.medium) {
+                ProgressView()
+                    .tint(AppTheme.Colors.accent)
+
+                Text("home.load.loading")
+                    .font(.system(.subheadline, design: .rounded, weight: .medium))
+                    .foregroundStyle(AppTheme.Colors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityElement(children: .combine)
+        }
+    }
+
+    private func loadErrorSection(isPartial: Bool) -> some View {
+        AppCard {
+            VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
+                Label(
+                    isPartial ? "home.load.partial.title" : "home.load.error.title",
+                    systemImage: "exclamationmark.arrow.triangle.2.circlepath"
+                )
+                .font(.system(.headline, design: .rounded, weight: .semibold))
+                .foregroundStyle(AppTheme.Colors.textPrimary)
+
+                Text(isPartial ? "home.load.partial.message" : "home.load.error.message")
+                    .font(.system(.subheadline, design: .rounded))
+                    .foregroundStyle(AppTheme.Colors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Button {
+                    Task { await viewModel.load() }
+                } label: {
+                    Label("home.load.retry", systemImage: "arrow.clockwise")
+                        .font(.system(.headline, design: .rounded, weight: .semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(AppTheme.Colors.secondaryAccent)
+                        .foregroundStyle(AppTheme.Colors.textPrimary)
+                        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                }
+                .accessibilityHint(Text("home.load.retry.accessibility_hint"))
+            }
+        }
+    }
+
+    private func presentEditorIfAvailable() {
+        guard viewModel.canPresentEntryEditor else {
+            return
+        }
+
+        isPresentingEditor = true
     }
 }
 

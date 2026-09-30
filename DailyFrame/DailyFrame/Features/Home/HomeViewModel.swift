@@ -1,8 +1,29 @@
 import Foundation
 import SwiftUI
 
+enum HomeLoadState: Equatable {
+    case idle
+    case loading
+    case loaded
+    case partialFailure
+    case failed
+}
+
+enum HomeSectionLoadState: Equatable {
+    case idle
+    case loading
+    case loaded
+    case failed
+}
+
 @MainActor
 final class HomeViewModel: ObservableObject {
+    @Published private(set) var loadState: HomeLoadState = .idle
+    @Published private(set) var todayEntryLoadState: HomeSectionLoadState = .idle
+    @Published private(set) var recentEntriesLoadState: HomeSectionLoadState = .idle
+    @Published private(set) var streakLoadState: HomeSectionLoadState = .idle
+    @Published private(set) var monthStatsLoadState: HomeSectionLoadState = .idle
+    @Published private(set) var missionLoadState: HomeSectionLoadState = .idle
     @Published private(set) var todayEntry: DailyPhotoEntry?
     @Published private(set) var recentEntries: [DailyPhotoEntry] = []
     @Published private(set) var currentStreak = 0
@@ -17,6 +38,25 @@ final class HomeViewModel: ObservableObject {
     private let streakService: StreakService
     private let missionService: MissionService
     private let dateProvider: DateProvider
+    private var activeLoadID: UUID?
+    private var loadedTodayDateString: String?
+    private var loadedMonthString: String?
+    private var loadedMissionDateString: String?
+
+    private(set) var hasLoadedRecentEntries = false
+    private(set) var hasLoadedStreak = false
+
+    var hasLoadedTodayEntry: Bool {
+        loadedTodayDateString == dateProvider.localDateStringForNow()
+    }
+
+    var hasLoadedMonthStats: Bool {
+        loadedMonthString == dateProvider.monthString(from: dateProvider.currentDate())
+    }
+
+    var hasLoadedMission: Bool {
+        loadedMissionDateString == dateProvider.localDateStringForNow()
+    }
 
     init(
         entryRepository: EntryRepository = EntryRepository(),
@@ -76,85 +116,173 @@ final class HomeViewModel: ObservableObject {
     }
 
     var isTodayMissionCompleted: Bool {
-        todayMission?.isCompleted == true || todayEntry?.missionCompleted == true || todayEntry != nil
+        let currentTodayEntry = hasLoadedTodayEntry ? todayEntry : nil
+        let currentTodayMission = hasLoadedMission ? todayMission : nil
+        return currentTodayMission?.isCompleted == true
+            || currentTodayEntry?.missionCompleted == true
+            || currentTodayEntry != nil
+    }
+
+    var canPresentEntryEditor: Bool {
+        todayEntryLoadState == .loaded
+    }
+
+    var hasAnyLoadedData: Bool {
+        hasLoadedTodayEntry
+            || hasLoadedRecentEntries
+            || hasLoadedStreak
+            || hasLoadedMonthStats
+            || hasLoadedMission
+    }
+
+    var shouldShowLoadingPlaceholder: Bool {
+        loadState == .loading && hasAnyLoadedData == false
+    }
+
+    var shouldShowFullLoadError: Bool {
+        loadState == .failed && hasAnyLoadedData == false
+    }
+
+    var shouldShowPartialLoadError: Bool {
+        loadState == .partialFailure || (loadState == .failed && hasAnyLoadedData)
     }
 
     func load() async {
-        async let today: () = loadTodayEntry()
-        async let recent: () = loadRecentEntries()
-        async let streak: () = loadStreak()
-        async let monthStats: () = loadMonthStats()
-        async let mission: () = loadTodayMission()
+        let loadID = UUID()
+        let now = dateProvider.currentDate()
+        let todayDateString = dateProvider.localDateString(from: now)
+        activeLoadID = loadID
+        loadState = .loading
+        todayEntryLoadState = .loading
+        recentEntriesLoadState = .loading
+        streakLoadState = .loading
+        monthStatsLoadState = .loading
+        missionLoadState = .loading
 
-        _ = await (today, recent, streak, monthStats, mission)
-        await syncTodayMissionCompletionIfNeeded()
-    }
+        async let today = loadTodayEntry(for: todayDateString, loadID: loadID)
+        async let recent = loadRecentEntries(loadID: loadID)
+        async let streak = loadStreak(now: now, loadID: loadID)
+        async let monthStats = loadMonthStats(now: now, loadID: loadID)
+        async let mission = loadTodayMission(for: todayDateString, loadID: loadID)
 
-    private func loadTodayEntry() async {
-        do {
-            todayEntry = try await entryRepository.fetchEntry(for: dateProvider.localDateStringForNow())
-        } catch {
-            todayEntry = nil
+        let results = await [today, recent, streak, monthStats, mission]
+        guard activeLoadID == loadID else { return }
+
+        await syncTodayMissionCompletionIfNeeded(loadID: loadID)
+        guard activeLoadID == loadID else { return }
+
+        let successCount = results.filter { $0 }.count
+        if successCount == results.count {
+            loadState = .loaded
+        } else if successCount == 0 {
+            loadState = .failed
+        } else {
+            loadState = .partialFailure
         }
     }
 
-    private func loadRecentEntries() async {
+    private func loadTodayEntry(for localDateString: String, loadID: UUID) async -> Bool {
+        do {
+            let entry = try await entryRepository.fetchEntry(for: localDateString)
+            guard activeLoadID == loadID else { return false }
+
+            todayEntry = entry
+            loadedTodayDateString = localDateString
+            todayEntryLoadState = .loaded
+            return true
+        } catch {
+            guard activeLoadID == loadID else { return false }
+            todayEntryLoadState = .failed
+            return false
+        }
+    }
+
+    private func loadRecentEntries(loadID: UUID) async -> Bool {
         do {
             let entries = try await entryRepository.fetchAllActiveEntries()
+            guard activeLoadID == loadID else { return false }
+
             recentEntries = Array(entries.sorted { $0.localDateString > $1.localDateString }.prefix(3))
+            hasLoadedRecentEntries = true
+            recentEntriesLoadState = .loaded
+            return true
         } catch {
-            recentEntries = []
+            guard activeLoadID == loadID else { return false }
+            recentEntriesLoadState = .failed
+            return false
         }
     }
 
-    private func loadStreak() async {
+    private func loadStreak(now: Date, loadID: UUID) async -> Bool {
         do {
-            let state = try await streakService.evaluateMissedYesterdayIfNeeded(now: dateProvider.currentDate())
+            let state = try await streakService.evaluateMissedYesterdayIfNeeded(now: now)
+            guard activeLoadID == loadID else { return false }
+
             currentStreak = state.currentStreak
             longestStreak = state.longestStreak
             freezeCount = state.freezeCount
             latestFreezeUsage = state.latestFreezeUsage
+            hasLoadedStreak = true
+            streakLoadState = .loaded
+            return true
         } catch {
-            currentStreak = 0
-            longestStreak = 0
-            freezeCount = 1
-            latestFreezeUsage = nil
+            guard activeLoadID == loadID else { return false }
+            streakLoadState = .failed
+            return false
         }
     }
 
-    private func loadTodayMission() async {
+    private func loadTodayMission(for localDateString: String, loadID: UUID) async -> Bool {
         do {
-            todayMission = try await missionService.mission(for: dateProvider.localDateStringForNow())
+            let mission = try await missionService.mission(for: localDateString)
+            guard activeLoadID == loadID else { return false }
+
+            todayMission = mission
+            loadedMissionDateString = localDateString
+            missionLoadState = .loaded
+            return true
         } catch {
-            todayMission = nil
+            guard activeLoadID == loadID else { return false }
+            missionLoadState = .failed
+            return false
         }
     }
 
-    private func syncTodayMissionCompletionIfNeeded() async {
-        guard todayEntry != nil,
+    private func syncTodayMissionCompletionIfNeeded(loadID: UUID) async {
+        guard todayEntryLoadState == .loaded,
+              missionLoadState == .loaded,
+              todayEntry != nil,
               let todayMission,
               todayMission.isCompleted == false else {
             return
         }
 
         do {
-            self.todayMission = try await missionService.completeMission(for: todayMission.localDateString)
+            let completedMission = try await missionService.completeMission(for: todayMission.localDateString)
+            guard activeLoadID == loadID else { return }
+            self.todayMission = completedMission
         } catch {
+            guard activeLoadID == loadID else { return }
             self.todayMission = todayMission
         }
     }
 
-    private func loadMonthStats() async {
-        let now = dateProvider.currentDate()
+    private func loadMonthStats(now: Date, loadID: UUID) async -> Bool {
         let monthPrefix = dateProvider.monthString(from: now)
 
         do {
             let monthEntries = try await entryRepository.fetchEntries(inMonthPrefix: monthPrefix)
-            monthEntryCount = monthEntries.count
-        } catch {
-            monthEntryCount = 0
-        }
+            guard activeLoadID == loadID else { return false }
 
-        currentMonthDayCount = dateProvider.calendar.range(of: .day, in: .month, for: now)?.count ?? 30
+            monthEntryCount = monthEntries.count
+            currentMonthDayCount = dateProvider.calendar.range(of: .day, in: .month, for: now)?.count ?? 30
+            loadedMonthString = monthPrefix
+            monthStatsLoadState = .loaded
+            return true
+        } catch {
+            guard activeLoadID == loadID else { return false }
+            monthStatsLoadState = .failed
+            return false
+        }
     }
 }

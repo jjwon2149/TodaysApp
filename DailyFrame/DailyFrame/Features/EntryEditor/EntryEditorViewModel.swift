@@ -31,9 +31,12 @@ final class EntryEditorViewModel: ObservableObject {
     private let existingEntry: DailyPhotoEntry?
     private let entryRepository: EntryRepository
     private let imageStorageService: ImageStorageService
-    private let streakService: StreakService
-    private let streakStateRepository: StreakStateRepository
     private let missionService: MissionService
+    private let missionRepository: MissionRepository
+    private let recordStreakCompletion: (String) async throws -> Void
+    private let fetchStreakState: () async throws -> StreakState
+    private let dateProvider: DateProvider
+    private let performPostSaveEffects: () async -> Void
     private var imageData: Data?
     private var imageSourceType: String
 
@@ -43,14 +46,31 @@ final class EntryEditorViewModel: ObservableObject {
         imageStorageService: ImageStorageService = ImageStorageService(),
         streakService: StreakService = StreakService(),
         streakStateRepository: StreakStateRepository = StreakStateRepository(),
-        missionService: MissionService = MissionService()
+        missionService: MissionService = MissionService(),
+        missionRepository: MissionRepository = MissionRepository(),
+        streakCompletionRecorder: ((String) async throws -> Void)? = nil,
+        streakStateFetcher: (() async throws -> StreakState)? = nil,
+        dateProvider: DateProvider = DateProvider(),
+        postSaveEffects: (() async -> Void)? = nil
     ) {
         self.existingEntry = existingEntry
         self.entryRepository = entryRepository
         self.imageStorageService = imageStorageService
-        self.streakService = streakService
-        self.streakStateRepository = streakStateRepository
         self.missionService = missionService
+        self.missionRepository = missionRepository
+        self.recordStreakCompletion = streakCompletionRecorder ?? { localDateString in
+            try await streakService.recordCompletion(for: localDateString)
+        }
+        self.fetchStreakState = streakStateFetcher ?? {
+            try await streakStateRepository.fetchPrimaryState()
+        }
+        self.dateProvider = dateProvider
+        self.performPostSaveEffects = postSaveEffects ?? {
+            try? await WidgetSnapshotService().refreshSnapshot()
+            Task.detached(priority: .background) {
+                await CloudKitSyncService.shared.synchronize(trigger: .localChange)
+            }
+        }
         self.memo = existingEntry?.memo ?? ""
         self.selectedMood = existingEntry?.moodCode
         self.imageSourceType = existingEntry?.sourceType ?? "library"
@@ -117,7 +137,7 @@ final class EntryEditorViewModel: ObservableObject {
         defer { isSaving = false }
 
         do {
-            let dayKey = existingEntry?.localDateString ?? DailyFrameDateFormatter.localDateString(from: .now)
+            let dayKey = existingEntry?.localDateString ?? dateProvider.localDateStringForNow()
             let storedPath: String
             let thumbnailPath: String?
             var createdPaths: [String] = []
@@ -157,12 +177,18 @@ final class EntryEditorViewModel: ObservableObject {
             }
 
             var entryRollbackState: EntryRollbackState?
+            var missionRollbackState: MissionRollbackState?
             var didUpsertEntry = false
+            var writtenEntry: DailyPhotoEntry?
+            var writtenMission: DailyMission?
 
             do {
-                entryRollbackState = try await makeEntryRollbackState()
+                entryRollbackState = try await makeEntryRollbackState(for: dayKey)
                 let isEditingExistingEntry = existingEntry != nil
-                let mission = try await missionService.mission(for: dayKey)
+                if isEditingExistingEntry == false {
+                    missionRollbackState = try await makeMissionRollbackState(for: dayKey)
+                }
+                let mission = isEditingExistingEntry ? nil : try await missionService.mission(for: dayKey)
                 var entry = existingEntry ?? DailyPhotoEntry(
                     localDateString: dayKey,
                     imageLocalPath: storedPath,
@@ -175,48 +201,66 @@ final class EntryEditorViewModel: ObservableObject {
                 entry.thumbnailLocalPath = thumbnailPath
                 entry.memo = memo.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : memo.trimmingCharacters(in: .whitespacesAndNewlines)
                 entry.moodCode = selectedMood
-                entry.missionId = isEditingExistingEntry ? existingEntry?.missionId : mission.id
+                entry.missionId = isEditingExistingEntry ? existingEntry?.missionId : mission?.id
                 entry.missionCompleted = isEditingExistingEntry ? existingEntry?.missionCompleted ?? false : true
                 entry.sourceType = imageSourceType
 
                 try await entryRepository.upsert(entry)
                 didUpsertEntry = true
+                writtenEntry = entry
                 savedEntry = entry
 
                 let shouldRecordCompletion = isEditingExistingEntry == false
-                let summaryMission: DailyMission
+                var completedMission: DailyMission?
 
                 if shouldRecordCompletion {
-                    summaryMission = try await missionService.completeMission(for: dayKey)
-                    try await streakService.recordCompletion(for: dayKey)
-                } else {
-                    summaryMission = mission
+                    completedMission = try await missionService.completeMission(for: dayKey)
+                    writtenMission = completedMission
+                    try await recordStreakCompletion(dayKey)
                 }
 
                 deleteReplacedImageFiles(newImagePath: storedPath, newThumbnailPath: thumbnailPath)
 
-                let streakState = (try? await streakStateRepository.fetchPrimaryState()) ?? StreakState(
-                    currentStreak: 1,
-                    longestStreak: 1,
-                    lastCompletedLocalDateString: dayKey
-                )
-                completionSummary = EntryCompletionSummary(
-                    currentStreak: max(streakState.currentStreak, 1),
-                    missionTitle: summaryMission.localizedTitle,
-                    missionCompleted: shouldRecordCompletion ? summaryMission.isCompleted : entry.missionCompleted,
-                    rewardText: L10n.string("editor.completion.reward_xp"),
-                    returnMessage: Self.returnMessage(for: max(streakState.currentStreak, 1))
-                )
+                if shouldRecordCompletion, let completedMission {
+                    let confirmedStreak = (try? await fetchStreakState())?.currentStreak
+                    completionSummary = EntryCompletionSummary(
+                        outcome: .created,
+                        confirmedCurrentStreak: confirmedStreak,
+                        missionTitle: completedMission.localizedTitle,
+                        missionCompleted: completedMission.isCompleted,
+                        returnMessage: confirmedStreak.map(Self.returnMessage(for:))
+                            ?? L10n.string("editor.completion.saved_message")
+                    )
+                } else {
+                    completionSummary = EntryCompletionSummary(
+                        outcome: .updated,
+                        confirmedCurrentStreak: nil,
+                        missionTitle: nil,
+                        missionCompleted: nil,
+                        returnMessage: L10n.string("editor.completion.updated_message")
+                    )
+                }
 
-                try? await WidgetSnapshotService().refreshSnapshot()
-                startBackgroundSync()
+                await performPostSaveEffects()
             } catch {
                 let shouldCleanupCreatedFiles: Bool
 
                 if didUpsertEntry == false {
                     shouldCleanupCreatedFiles = true
-                } else if let entryRollbackState {
-                    shouldCleanupCreatedFiles = await restoreEntryRollbackState(entryRollbackState)
+                } else if let entryRollbackState, let writtenEntry {
+                    let didRestoreEntry = await restoreEntryRollbackState(
+                        entryRollbackState,
+                        replacing: writtenEntry
+                    )
+                    if didRestoreEntry,
+                       let missionRollbackState,
+                       let writtenMission {
+                        _ = await restoreMissionRollbackState(
+                            missionRollbackState,
+                            replacing: writtenMission
+                        )
+                    }
+                    shouldCleanupCreatedFiles = didRestoreEntry
                 } else {
                     shouldCleanupCreatedFiles = false
                 }
@@ -261,16 +305,71 @@ final class EntryEditorViewModel: ObservableObject {
         }
     }
 
-    private func makeEntryRollbackState() async throws -> EntryRollbackState {
-        EntryRollbackState(entries: try await entryRepository.store.load().entries)
+    private func makeEntryRollbackState(for localDateString: String) async throws -> EntryRollbackState {
+        EntryRollbackState(
+            localDateString: localDateString,
+            previousEntry: try await entryRepository.store.load().entries.first {
+                $0.localDateString == localDateString
+            }
+        )
     }
 
-    private func restoreEntryRollbackState(_ state: EntryRollbackState) async -> Bool {
+    private func restoreEntryRollbackState(
+        _ state: EntryRollbackState,
+        replacing writtenEntry: DailyPhotoEntry
+    ) async -> Bool {
         do {
+            var didRestore = false
             try await entryRepository.store.update { snapshot in
-                snapshot.entries = state.entries
+                guard let index = snapshot.entries.firstIndex(where: {
+                    $0.localDateString == state.localDateString
+                }), Self.matchesForRollback(snapshot.entries[index], writtenEntry) else {
+                    return
+                }
+
+                if let previousEntry = state.previousEntry {
+                    snapshot.entries[index] = previousEntry
+                } else {
+                    snapshot.entries.remove(at: index)
+                }
+                didRestore = true
             }
-            return true
+            return didRestore
+        } catch {
+            return false
+        }
+    }
+
+    private func makeMissionRollbackState(for localDateString: String) async throws -> MissionRollbackState {
+        MissionRollbackState(
+            localDateString: localDateString,
+            previousMission: try await missionRepository.store.load().missionHistory.first {
+                $0.localDateString == localDateString
+            }
+        )
+    }
+
+    private func restoreMissionRollbackState(
+        _ state: MissionRollbackState,
+        replacing writtenMission: DailyMission
+    ) async -> Bool {
+        do {
+            var didRestore = false
+            try await missionRepository.store.update { snapshot in
+                guard let index = snapshot.missionHistory.firstIndex(where: {
+                    $0.localDateString == state.localDateString
+                }), Self.matchesForRollback(snapshot.missionHistory[index], writtenMission) else {
+                    return
+                }
+
+                if let previousMission = state.previousMission {
+                    snapshot.missionHistory[index] = previousMission
+                } else {
+                    snapshot.missionHistory.remove(at: index)
+                }
+                didRestore = true
+            }
+            return didRestore
         } catch {
             return false
         }
@@ -284,18 +383,51 @@ final class EntryEditorViewModel: ObservableObject {
         }
     }
 
-    private func startBackgroundSync() {
-        Task.detached(priority: .background) {
-            await CloudKitSyncService.shared.synchronize(trigger: .localChange)
-        }
+    private struct EntryRollbackState {
+        let localDateString: String
+        let previousEntry: DailyPhotoEntry?
     }
 
-    private struct EntryRollbackState {
-        let entries: [DailyPhotoEntry]
+    private struct MissionRollbackState {
+        let localDateString: String
+        let previousMission: DailyMission?
+    }
+
+    private static func matchesForRollback(_ lhs: DailyPhotoEntry, _ rhs: DailyPhotoEntry) -> Bool {
+        lhs.id == rhs.id
+            && lhs.localDateString == rhs.localDateString
+            && lhs.createdAtUTC == rhs.createdAtUTC
+            && lhs.updatedAtUTC == rhs.updatedAtUTC
+            && lhs.timezoneIdentifier == rhs.timezoneIdentifier
+            && lhs.timezoneOffsetMinutes == rhs.timezoneOffsetMinutes
+            && lhs.imageLocalPath == rhs.imageLocalPath
+            && lhs.thumbnailLocalPath == rhs.thumbnailLocalPath
+            && lhs.memo == rhs.memo
+            && lhs.moodCode == rhs.moodCode
+            && lhs.missionId == rhs.missionId
+            && lhs.missionCompleted == rhs.missionCompleted
+            && lhs.sourceType == rhs.sourceType
+            && lhs.isDeleted == rhs.isDeleted
+    }
+
+    private static func matchesForRollback(_ lhs: DailyMission, _ rhs: DailyMission) -> Bool {
+        lhs.id == rhs.id
+            && lhs.localDateString == rhs.localDateString
+            && lhs.templateID == rhs.templateID
+            && lhs.title == rhs.title
+            && lhs.prompt == rhs.prompt
+            && lhs.category == rhs.category
+            && lhs.symbolName == rhs.symbolName
+            && lhs.createdAtUTC == rhs.createdAtUTC
+            && lhs.completedAtUTC == rhs.completedAtUTC
     }
 
     private static func returnMessage(for currentStreak: Int) -> String {
-        if currentStreak <= 1 {
+        if currentStreak <= 0 {
+            return L10n.string("editor.completion.saved_message")
+        }
+
+        if currentStreak == 1 {
             return L10n.string("editor.completion.return_first")
         }
 
@@ -304,9 +436,14 @@ final class EntryEditorViewModel: ObservableObject {
 }
 
 struct EntryCompletionSummary: Equatable {
-    let currentStreak: Int
-    let missionTitle: String
-    let missionCompleted: Bool
-    let rewardText: String
+    let outcome: EntrySaveOutcome
+    let confirmedCurrentStreak: Int?
+    let missionTitle: String?
+    let missionCompleted: Bool?
     let returnMessage: String
+}
+
+enum EntrySaveOutcome: Equatable {
+    case created
+    case updated
 }

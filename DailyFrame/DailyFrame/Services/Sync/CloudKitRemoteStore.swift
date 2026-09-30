@@ -64,7 +64,13 @@ final class CloudKitRemoteStore: CloudSyncRemoteStore {
 
     func save(entry: CloudSyncEntryRecord) async throws {
         let recordID = CKRecord.ID(recordName: Self.entryRecordName(for: entry.localDateString))
-        let record = try await fetchRecord(with: recordID) ?? CKRecord(recordType: RecordType.entry, recordID: recordID)
+        let existingRecord = try await fetchRecord(with: recordID)
+        if let existingRecord,
+           let existingEntry = makeEntryRecord(from: existingRecord),
+           Self.shouldSave(entry: entry, over: existingEntry) == false {
+            throw CloudSyncRemoteStoreError.staleEntryWrite
+        }
+        let record = existingRecord ?? CKRecord(recordType: RecordType.entry, recordID: recordID)
 
         record[Field.localDateString] = entry.localDateString as CKRecordValue
         record[Field.updatedAtUTC] = entry.updatedAtUTC as CKRecordValue
@@ -90,7 +96,13 @@ final class CloudKitRemoteStore: CloudSyncRemoteStore {
             localDateString: media.localDateString,
             role: media.role
         ))
-        let record = try await fetchRecord(with: recordID) ?? CKRecord(recordType: RecordType.media, recordID: recordID)
+        let existingRecord = try await fetchRecord(with: recordID)
+        if let existingRecord,
+           let existingMedia = makeMediaAsset(from: existingRecord),
+           Self.shouldSave(media: media, over: existingMedia) == false {
+            throw CloudSyncRemoteStoreError.staleMediaWrite
+        }
+        let record = existingRecord ?? CKRecord(recordType: RecordType.media, recordID: recordID)
         let entryRecordID = CKRecord.ID(recordName: Self.entryRecordName(for: media.localDateString))
 
         record[Field.entry] = CKRecord.Reference(recordID: entryRecordID, action: .none)
@@ -198,7 +210,7 @@ final class CloudKitRemoteStore: CloudSyncRemoteStore {
 
         try await withCheckedThrowingContinuation { continuation in
             let operation = CKModifyRecordsOperation(recordsToSave: records, recordIDsToDelete: nil)
-            operation.savePolicy = .changedKeys
+            operation.savePolicy = .ifServerRecordUnchanged
             operation.isAtomic = false
             operation.modifyRecordsResultBlock = { result in
                 switch result {
@@ -281,5 +293,19 @@ final class CloudKitRemoteStore: CloudSyncRemoteStore {
         }
 
         return (components[1], role)
+    }
+
+    static func shouldSave(entry candidate: CloudSyncEntryRecord, over current: CloudSyncEntryRecord) -> Bool {
+        if candidate.updatedAtUTC != current.updatedAtUTC {
+            return candidate.updatedAtUTC > current.updatedAtUTC
+        }
+        if candidate.isDeleted != current.isDeleted {
+            return candidate.isDeleted
+        }
+        return true
+    }
+
+    static func shouldSave(media candidate: CloudSyncMediaAsset, over current: CloudSyncMediaAsset) -> Bool {
+        candidate.updatedAtUTC >= current.updatedAtUTC
     }
 }

@@ -19,6 +19,9 @@
 		DFAAD0012FC100000000001 /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = DFAAD0032FC100000000001 /* GoogleMobileAds */; };
 		DFAAD0022FC100000000001 /* GoogleUserMessagingPlatform in Frameworks */ = {isa = PBXBuildFile; productRef = DFAAD0042FC100000000001 /* GoogleUserMessagingPlatform */; };
 		DFA0000C2FB000000000001 /* DailyFrameWidget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = DFA000012FB000000000001 /* DailyFrameWidget.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		DF0930010000000000000001 /* EntryCompletionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF0930020000000000000001 /* EntryCompletionTests.swift */; };
+		DF0930010000000000000002 /* HomeLoadStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF0930020000000000000002 /* HomeLoadStateTests.swift */; };
+		DF0930010000000000000003 /* SyncStatusPresentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF0930020000000000000003 /* SyncStatusPresentationTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -65,6 +68,9 @@
 		C0D690162FAB910000000001 /* GrowthEventLoggerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GrowthEventLoggerTests.swift; sourceTree = "<group>"; };
 		C0D690152FAB910000000001 /* CloudKitSyncServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudKitSyncServiceTests.swift; sourceTree = "<group>"; };
 		DFA000012FB000000000001 /* DailyFrameWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = DailyFrameWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		DF0930020000000000000001 /* EntryCompletionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntryCompletionTests.swift; sourceTree = "<group>"; };
+		DF0930020000000000000002 /* HomeLoadStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeLoadStateTests.swift; sourceTree = "<group>"; };
+		DF0930020000000000000003 /* SyncStatusPresentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncStatusPresentationTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -150,6 +156,9 @@
 				C0D690132FAB910000000001 /* MissionServiceTests.swift */,
 				BBD0000F2FAB900000000001 /* BackupExportTests.swift */,
 				C0D690152FAB910000000001 /* CloudKitSyncServiceTests.swift */,
+				DF0930020000000000000003 /* SyncStatusPresentationTests.swift */,
+				DF0930020000000000000002 /* HomeLoadStateTests.swift */,
+				DF0930020000000000000001 /* EntryCompletionTests.swift */,
 				BBD000012FAB900000000001 /* StreakServiceTests.swift */,
 			);
 			path = DailyFrameTests;
@@ -321,6 +330,9 @@
 				C0D690032FAB910000000001 /* MissionServiceTests.swift in Sources */,
 				BBD000102FAB900000000001 /* BackupExportTests.swift in Sources */,
 				C0D690052FAB910000000001 /* CloudKitSyncServiceTests.swift in Sources */,
+				DF0930010000000000000003 /* SyncStatusPresentationTests.swift in Sources */,
+				DF0930010000000000000002 /* HomeLoadStateTests.swift in Sources */,
+				DF0930010000000000000001 /* EntryCompletionTests.swift in Sources */,
 				BBD000022FAB900000000001 /* StreakServiceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

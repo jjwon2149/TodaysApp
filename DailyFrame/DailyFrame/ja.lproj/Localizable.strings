@@ -129,6 +129,13 @@
 "editor.completion.needs_review" = "確認が必要";
 "editor.completion.reward_points" = "記録ポイント";
 "editor.completion.reward_xp" = "+20 XP";
+"editor.completion.updated_header" = "記録を更新しました";
+"editor.completion.saved_message" = "写真の記録を保存しました。カレンダーで確認できます。";
+"editor.completion.updated_message" = "変更内容を保存しました。カレンダーで確認できます。";
+"editor.completion.details_title" = "保存内容";
+"editor.completion.save_result" = "記録";
+"editor.completion.saved" = "保存済み";
+"editor.completion.updated" = "更新済み";
 "editor.completion.return_first" = "明日も一枚残すと2日ストリークが始まります。";
 "editor.completion.return_next" = "明日もう一枚残すと%d日ストリークにつながります。";
 "editor.completion.action.accessibility_hint" = "保存完了後に完了画面を閉じます。";
@@ -189,6 +196,7 @@
 "profile.sync.status.unavailable" = "iCloud同期はオフラインまたは利用できません。ローカル保存と書き出しは引き続き使え、同期が成功するまで変更はローカルに残ります。";
 "profile.sync.status.failed" = "iCloud同期を完了できませんでした。ローカル保存と書き出しは引き続き使え、同期が成功するまで変更はローカルに残ります。";
 "profile.sync.status.just_now" = "たった今";
+"profile.sync.status.incomplete" = "一部の記録や写真はまだ同期できていません。接続を確認して、今すぐ同期をもう一度タップしてください。";
 "profile.notification.title" = "毎日の記録リマインダー";
 "profile.notification.time" = "通知時刻";
 "profile.notification.time.accessibility_hint" = "毎日の記録リマインダー時刻を設定します。";
@@ -271,3 +279,12 @@
 "error.notification.enable" = "通知をオンにできませんでした。";
 "error.notification.settings_save" = "通知設定を保存できませんでした。";
 "error.sync.policy_save" = "iCloud同期設定を保存できませんでした。";
+
+// Home loading and recovery
+"home.load.loading" = "ホームの記録を読み込んでいます。";
+"home.load.error.title" = "ホームを読み込めませんでした";
+"home.load.error.message" = "記録を確認できませんでした。しばらくしてからもう一度読み込んでください。";
+"home.load.partial.title" = "一部の記録を読み込めませんでした";
+"home.load.partial.message" = "前回読み込んだ内容が含まれています。最新の内容を確認するには、もう一度読み込んでください。";
+"home.load.retry" = "もう一度読み込む";
+"home.load.retry.accessibility_hint" = "今日の記録とホームの統計を再読み込みします。";

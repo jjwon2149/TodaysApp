@@ -129,6 +129,13 @@
 "editor.completion.needs_review" = "확인 필요";
 "editor.completion.reward_points" = "기록 포인트";
 "editor.completion.reward_xp" = "+20 XP";
+"editor.completion.updated_header" = "기록 수정 완료";
+"editor.completion.saved_message" = "사진 기록을 저장했습니다. 캘린더에서 확인할 수 있어요.";
+"editor.completion.updated_message" = "변경한 내용을 저장했습니다. 캘린더에서 확인할 수 있어요.";
+"editor.completion.details_title" = "저장 내용";
+"editor.completion.save_result" = "기록";
+"editor.completion.saved" = "저장됨";
+"editor.completion.updated" = "수정됨";
 "editor.completion.return_first" = "내일 다시 한 장을 남기면 2일 스트릭이 시작됩니다.";
 "editor.completion.return_next" = "내일 한 장을 더 남기면 %d일 스트릭으로 이어집니다.";
 "editor.completion.action.accessibility_hint" = "저장이 끝난 뒤 완료 화면을 닫습니다.";
@@ -189,6 +196,7 @@
 "profile.sync.status.unavailable" = "iCloud 동기화가 오프라인이거나 사용할 수 없습니다. 로컬 저장과 내보내기는 계속 사용할 수 있고 동기화가 성공할 때까지 변경 사항은 로컬에 남습니다.";
 "profile.sync.status.failed" = "iCloud 동기화를 완료하지 못했습니다. 로컬 저장과 내보내기는 계속 사용할 수 있고 동기화가 성공할 때까지 변경 사항은 로컬에 남습니다.";
 "profile.sync.status.just_now" = "방금";
+"profile.sync.status.incomplete" = "일부 기록이나 사진을 아직 동기화하지 못했어요. 연결 상태를 확인한 뒤 지금 동기화를 다시 눌러 주세요.";
 "profile.notification.title" = "매일 기록 알림";
 "profile.notification.time" = "알림 시간";
 "profile.notification.time.accessibility_hint" = "매일 기록 알림 시간을 설정합니다.";
@@ -271,3 +279,12 @@
 "error.notification.enable" = "알림을 켜지 못했습니다.";
 "error.notification.settings_save" = "알림 설정을 저장하지 못했습니다.";
 "error.sync.policy_save" = "iCloud 동기화 설정을 저장하지 못했습니다.";
+
+// Home loading and recovery
+"home.load.loading" = "홈 기록을 불러오는 중이에요.";
+"home.load.error.title" = "홈을 불러오지 못했어요";
+"home.load.error.message" = "기록을 확인하지 못했어요. 잠시 후 다시 불러와 주세요.";
+"home.load.partial.title" = "일부 기록을 불러오지 못했어요";
+"home.load.partial.message" = "마지막으로 불러온 내용이 포함되어 있어요. 최신 내용을 확인하려면 다시 불러와 주세요.";
+"home.load.retry" = "다시 불러오기";
+"home.load.retry.accessibility_hint" = "오늘의 기록과 홈 통계를 다시 불러옵니다.";

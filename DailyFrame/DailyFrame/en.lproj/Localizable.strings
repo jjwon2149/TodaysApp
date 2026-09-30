@@ -129,6 +129,13 @@
 "editor.completion.needs_review" = "Needs Review";
 "editor.completion.reward_points" = "Entry Points";
 "editor.completion.reward_xp" = "+20 XP";
+"editor.completion.updated_header" = "Record Updated";
+"editor.completion.saved_message" = "Your photo was saved. You can check it in Calendar.";
+"editor.completion.updated_message" = "Your changes were saved. You can check them in Calendar.";
+"editor.completion.details_title" = "Save Details";
+"editor.completion.save_result" = "Record";
+"editor.completion.saved" = "Saved";
+"editor.completion.updated" = "Updated";
 "editor.completion.return_first" = "Save one more photo tomorrow to start a 2-day streak.";
 "editor.completion.return_next" = "Save one more photo tomorrow to continue to a %d-day streak.";
 "editor.completion.action.accessibility_hint" = "Closes the completion screen after the entry is saved.";
@@ -189,6 +196,7 @@
 "profile.sync.status.unavailable" = "iCloud sync is offline or unavailable. Local saves and export still work; changes stay local until sync succeeds.";
 "profile.sync.status.failed" = "Could not finish iCloud sync. Local saves and export still work; changes stay local until sync succeeds.";
 "profile.sync.status.just_now" = "just now";
+"profile.sync.status.incomplete" = "Some records or photos have not synced yet. Check your connection, then tap Sync Now to retry.";
 "profile.notification.title" = "Daily Reminder";
 "profile.notification.time" = "Reminder Time";
 "profile.notification.time.accessibility_hint" = "Sets the daily reminder time.";
@@ -271,3 +279,12 @@
 "error.notification.enable" = "Could not turn on notifications.";
 "error.notification.settings_save" = "Could not save notification settings.";
 "error.sync.policy_save" = "Could not save iCloud sync settings.";
+
+// Home loading and recovery
+"home.load.loading" = "Loading your Home records.";
+"home.load.error.title" = "Couldn’t Load Home";
+"home.load.error.message" = "We couldn’t read your records. Please try loading them again.";
+"home.load.partial.title" = "Some Records Couldn’t Load";
+"home.load.partial.message" = "Some information is from the last successful load. Try again to check for updates.";
+"home.load.retry" = "Load Again";
+"home.load.retry.accessibility_hint" = "Reloads today’s entry and Home stats.";

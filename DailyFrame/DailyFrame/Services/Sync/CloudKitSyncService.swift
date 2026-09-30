@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 
 actor CloudKitSyncService {
     static let shared = CloudKitSyncService()
@@ -97,9 +98,10 @@ actor CloudKitSyncService {
                 remoteMedia: remoteMedia
             )
 
+            let completedFully = summary.skippedMediaCount == 0
             status = CloudSyncStatus(
-                state: .synced,
-                lastSyncedAtUTC: nowProvider(),
+                state: completedFully ? .synced : .incomplete,
+                lastSyncedAtUTC: completedFully ? nowProvider() : status.lastSyncedAtUTC,
                 uploadedEntryCount: summary.uploadedEntryCount,
                 downloadedEntryCount: summary.downloadedEntryCount,
                 uploadedMediaCount: summary.uploadedMediaCount,
@@ -139,39 +141,89 @@ actor CloudKitSyncService {
         var summary = SyncSummary()
         let remoteEntriesByDate = Dictionary(uniqueKeysWithValues: remoteEntries.map { ($0.localDateString, $0) })
         let remoteMediaByDate = Dictionary(grouping: remoteMedia, by: \.localDateString)
-        var localEntriesByDate = try await collapsedLocalEntriesByDate()
+        let localEntriesByDate = try await collapsedLocalEntriesByDate()
         let allLocalDateStrings = Set(localEntriesByDate.keys).union(remoteEntriesByDate.keys)
+        var uploadedMetadataVersions: [String: Date] = [:]
 
+        // Finish metadata for every entry before attempting any media transfer.
         for localDateString in allLocalDateStrings.sorted() {
             let localEntry = localEntriesByDate[localDateString]
             let remoteEntry = remoteEntriesByDate[localDateString]
 
             if let localEntry, let remoteEntry {
                 if shouldRemoteWin(remoteEntry, over: localEntry) {
-                    try await applyRemoteEntry(
-                        remoteEntry,
-                        existingEntry: localEntry,
-                        mediaRecords: remoteMediaByDate[localDateString] ?? [],
-                        summary: &summary
-                    )
-                    localEntriesByDate[localDateString] = try await entryRepository.store.load().entries.first {
-                        $0.localDateString == localDateString
+                    if remoteEntry.isDeleted {
+                        try await applyRemoteEntryMetadata(remoteEntry, expectedEntry: localEntry, summary: &summary)
                     }
                 } else if shouldLocalUpload(localEntry, over: remoteEntry) {
-                    try await uploadLocalEntry(localEntry, remoteStore: remoteStore, summary: &summary)
+                    try await uploadLocalEntryMetadata(localEntry, remoteStore: remoteStore, summary: &summary)
+                    uploadedMetadataVersions[localDateString] = localEntry.updatedAtUTC
                 }
             } else if let remoteEntry {
-                try await applyRemoteEntry(
+                if remoteEntry.isDeleted {
+                    try await applyRemoteEntryMetadata(remoteEntry, expectedEntry: nil, summary: &summary)
+                }
+            } else if let localEntry {
+                try await uploadLocalEntryMetadata(localEntry, remoteStore: remoteStore, summary: &summary)
+                uploadedMetadataVersions[localDateString] = localEntry.updatedAtUTC
+            }
+        }
+
+        // Re-read after metadata I/O. A user may have edited or deleted an entry
+        // while the remote store was being updated.
+        let currentLocalEntriesByDate = try await collapsedLocalEntriesByDate()
+        for localDateString in allLocalDateStrings.sorted() {
+            let localEntry = currentLocalEntriesByDate[localDateString]
+            let remoteEntry = remoteEntriesByDate[localDateString]
+
+            if let remoteEntry,
+               remoteEntry.isDeleted == false,
+               localEntry == nil || shouldRemoteWin(remoteEntry, over: localEntry!) {
+                try await applyRemoteActiveEntry(
                     remoteEntry,
-                    existingEntry: nil,
+                    expectedEntry: localEntry,
                     mediaRecords: remoteMediaByDate[localDateString] ?? [],
                     summary: &summary
                 )
-                localEntriesByDate[localDateString] = try await entryRepository.store.load().entries.first {
-                    $0.localDateString == localDateString
+                continue
+            }
+
+            guard let localEntry, localEntry.isDeleted == false else {
+                continue
+            }
+
+            if shouldLocalUpload(localEntry, over: remoteEntry) {
+                if uploadedMetadataVersions[localDateString] != localEntry.updatedAtUTC {
+                    try await uploadLocalEntryMetadata(localEntry, remoteStore: remoteStore, summary: &summary)
+                    uploadedMetadataVersions[localDateString] = localEntry.updatedAtUTC
                 }
-            } else if let localEntry {
-                try await uploadLocalEntry(localEntry, remoteStore: remoteStore, summary: &summary)
+            } else if let remoteEntry, shouldRemoteWin(remoteEntry, over: localEntry) {
+                // A compare-and-set rejection means a concurrent local mutation
+                // won. Never reconcile media against stale remote metadata.
+                continue
+            }
+
+            let recordsByRole = preferredMediaRecordsByRole(remoteMediaByDate[localDateString] ?? [])
+            for role in CloudSyncMediaRole.allCases {
+                guard let currentEntry = try await entryRepository.fetchEntry(for: localDateString) else {
+                    break
+                }
+
+                if let remoteEntry, shouldRemoteWin(remoteEntry, over: currentEntry) {
+                    break
+                }
+                if shouldLocalUpload(currentEntry, over: remoteEntry),
+                   uploadedMetadataVersions[localDateString] != currentEntry.updatedAtUTC {
+                    try await uploadLocalEntryMetadata(currentEntry, remoteStore: remoteStore, summary: &summary)
+                    uploadedMetadataVersions[localDateString] = currentEntry.updatedAtUTC
+                }
+                try await reconcileMedia(
+                    role: role,
+                    entry: currentEntry,
+                    remoteMedia: recordsByRole[role],
+                    remoteStore: remoteStore,
+                    summary: &summary
+                )
             }
         }
 
@@ -179,66 +231,124 @@ actor CloudKitSyncService {
     }
 
     private func collapsedLocalEntriesByDate() async throws -> [String: DailyPhotoEntry] {
+        try await entryRepository.store.update { snapshot in
+            let groupedEntries = Dictionary(grouping: snapshot.entries, by: \.localDateString)
+            let collapsedEntries = groupedEntries.values.compactMap { candidates in
+                candidates.max { lhs, rhs in
+                    isPreferred(rhs, over: lhs)
+                }
+            }
+            if collapsedEntries.count != snapshot.entries.count {
+                snapshot.entries = collapsedEntries.sorted { $0.localDateString < $1.localDateString }
+            }
+        }
+
         let snapshot = try await entryRepository.store.load()
-        let groupedEntries = Dictionary(grouping: snapshot.entries, by: \.localDateString)
-        let collapsedEntries = groupedEntries.values.compactMap { candidates in
-            candidates.max { lhs, rhs in
-                isPreferred(rhs, over: lhs)
-            }
-        }
-
-        if collapsedEntries.count != snapshot.entries.count {
-            try await entryRepository.store.update { updatedSnapshot in
-                updatedSnapshot.entries = collapsedEntries.sorted { $0.localDateString < $1.localDateString }
-            }
-        }
-
+        let collapsedEntries = snapshot.entries
         return Dictionary(uniqueKeysWithValues: collapsedEntries.map { ($0.localDateString, $0) })
     }
 
-    private func applyRemoteEntry(
+    private func applyRemoteEntryMetadata(
         _ remoteEntry: CloudSyncEntryRecord,
-        existingEntry: DailyPhotoEntry?,
+        expectedEntry: DailyPhotoEntry?,
+        summary: inout SyncSummary
+    ) async throws {
+        let mergedEntry = remoteEntry.makeLocalEntry(
+            preserving: expectedEntry,
+            mediaFileNames: [:]
+        )
+        if try await entryRepository.upsert(mergedEntry, replacing: expectedEntry) {
+            summary.downloadedEntryCount += 1
+        } else {
+            summary.skippedMediaCount += 1
+        }
+    }
+
+    private func applyRemoteActiveEntry(
+        _ remoteEntry: CloudSyncEntryRecord,
+        expectedEntry: DailyPhotoEntry?,
         mediaRecords: [CloudSyncMediaAsset],
         summary: inout SyncSummary
     ) async throws {
-        var mediaFileNames: [CloudSyncMediaRole: String] = [:]
+        let recordsByRole = preferredMediaRecordsByRole(mediaRecords)
+        var downloadedFileNames: [CloudSyncMediaRole: String] = [:]
+        var stagedFileNames: [String] = []
+        var imageIsComplete = true
+        var thumbnailNeedsRecovery = false
 
-        for mediaRecord in mediaRecords {
-            let fileName = imageStorageService.normalizedMediaReference(for: mediaRecord.fileName)
-
-            guard fileName.isEmpty == false else {
-                summary.skippedMediaCount += 1
+        for role in CloudSyncMediaRole.allCases {
+            let existingReference = role == .image ? expectedEntry?.imageLocalPath : expectedEntry?.thumbnailLocalPath
+            let existingURL = existingReference.flatMap(imageStorageService.resolvedFileURL(for:))
+            guard let media = recordsByRole[role] else {
+                if role == .image && (expectedEntry == nil || remoteEntry.updatedAtUTC > expectedEntry!.updatedAtUTC) {
+                    imageIsComplete = false
+                } else if role == .thumbnail, remoteEntry.updatedAtUTC > (expectedEntry?.updatedAtUTC ?? .distantPast) {
+                    thumbnailNeedsRecovery = true
+                }
                 continue
             }
 
-            mediaFileNames[mediaRecord.role] = fileName
-
-            guard let assetFileURL = mediaRecord.assetFileURL else {
-                summary.skippedMediaCount += 1
+            let needsRemoteVersion = existingURL == nil
+                || expectedEntry == nil
+                || media.updatedAtUTC > expectedEntry!.updatedAtUTC
+                || remoteEntry.updatedAtUTC > expectedEntry!.updatedAtUTC
+            guard needsRemoteVersion else {
                 continue
             }
 
-            do {
-                mediaFileNames[mediaRecord.role] = try imageStorageService.saveSyncedMediaFile(
-                    from: assetFileURL,
-                    preferredFileName: fileName
-                )
-                summary.downloadedMediaCount += 1
-            } catch {
-                summary.skippedMediaCount += 1
+            guard media.updatedAtUTC >= remoteEntry.updatedAtUTC else {
+                if role == .image {
+                    imageIsComplete = false
+                } else {
+                    thumbnailNeedsRecovery = true
+                }
+                continue
+            }
+            guard let savedFileName = stageRemoteMedia(media, role: role) else {
+                if role == .image {
+                    imageIsComplete = false
+                } else {
+                    thumbnailNeedsRecovery = true
+                }
+                continue
+            }
+            downloadedFileNames[role] = savedFileName
+            if savedFileName != existingReference {
+                stagedFileNames.append(savedFileName)
             }
         }
 
+        guard imageIsComplete else {
+            for fileName in stagedFileNames {
+                try? imageStorageService.deleteFileIfExists(at: fileName)
+            }
+            summary.skippedMediaCount += 1
+            return
+        }
+
+        if thumbnailNeedsRecovery {
+            if let imageFileName = downloadedFileNames[.image] ?? expectedEntry?.imageLocalPath {
+                downloadedFileNames[.thumbnail] = imageFileName
+            }
+            summary.skippedMediaCount += 1
+        }
+
         let mergedEntry = remoteEntry.makeLocalEntry(
-            preserving: existingEntry,
-            mediaFileNames: mediaFileNames
+            preserving: expectedEntry,
+            mediaFileNames: downloadedFileNames
         )
-        try await entryRepository.upsert(mergedEntry)
-        summary.downloadedEntryCount += 1
+        if try await entryRepository.upsert(mergedEntry, replacing: expectedEntry) {
+            summary.downloadedEntryCount += 1
+            summary.downloadedMediaCount += stagedFileNames.count
+        } else {
+            for fileName in stagedFileNames {
+                try? imageStorageService.deleteFileIfExists(at: fileName)
+            }
+            summary.skippedMediaCount += 1
+        }
     }
 
-    private func uploadLocalEntry(
+    private func uploadLocalEntryMetadata(
         _ entry: DailyPhotoEntry,
         remoteStore: CloudSyncRemoteStore,
         summary: inout SyncSummary
@@ -246,55 +356,116 @@ actor CloudKitSyncService {
         let record = CloudSyncEntryRecord(entry: entry)
         try await remoteStore.save(entry: record)
         summary.uploadedEntryCount += 1
-
-        guard entry.isDeleted == false else {
-            return
-        }
-
-        try await uploadMedia(
-            role: .image,
-            reference: entry.imageLocalPath,
-            updatedAtUTC: entry.updatedAtUTC,
-            localDateString: entry.localDateString,
-            remoteStore: remoteStore,
-            summary: &summary
-        )
-
-        if let thumbnailLocalPath = entry.thumbnailLocalPath {
-            try await uploadMedia(
-                role: .thumbnail,
-                reference: thumbnailLocalPath,
-                updatedAtUTC: entry.updatedAtUTC,
-                localDateString: entry.localDateString,
-                remoteStore: remoteStore,
-                summary: &summary
-            )
-        }
     }
 
-    private func uploadMedia(
+    private func reconcileMedia(
         role: CloudSyncMediaRole,
-        reference: String,
-        updatedAtUTC: Date,
-        localDateString: String,
+        entry: DailyPhotoEntry,
+        remoteMedia: CloudSyncMediaAsset?,
         remoteStore: CloudSyncRemoteStore,
         summary: inout SyncSummary
     ) async throws {
-        let fileName = imageStorageService.normalizedMediaReference(for: reference)
+        let reference = role == .image ? entry.imageLocalPath : entry.thumbnailLocalPath
+        let localAssetURL = reference.flatMap(imageStorageService.resolvedFileURL(for:))
 
-        guard let assetURL = imageStorageService.resolvedFileURL(for: reference) else {
+        if let localAssetURL {
+            let remoteNeedsUpload = remoteMedia == nil
+                || remoteMedia?.assetFileURL == nil
+                || entry.updatedAtUTC > (remoteMedia?.updatedAtUTC ?? .distantPast)
+            guard remoteNeedsUpload else {
+                if let remoteMedia, remoteMedia.updatedAtUTC > entry.updatedAtUTC {
+                    await downloadMedia(remoteMedia, role: role, expectedEntry: entry, summary: &summary)
+                }
+                return
+            }
+
+            do {
+                try await remoteStore.save(media: CloudSyncMediaAsset(
+                    localDateString: entry.localDateString,
+                    role: role,
+                    fileName: imageStorageService.normalizedMediaReference(for: reference ?? localAssetURL.lastPathComponent),
+                    updatedAtUTC: entry.updatedAtUTC,
+                    assetFileURL: localAssetURL
+                ))
+                summary.uploadedMediaCount += 1
+            } catch {
+                summary.skippedMediaCount += 1
+            }
+            return
+        }
+
+        if let remoteMedia {
+            await downloadMedia(remoteMedia, role: role, expectedEntry: entry, summary: &summary)
+        } else if role == .image {
+            summary.skippedMediaCount += 1
+        }
+    }
+
+    private func downloadMedia(
+        _ media: CloudSyncMediaAsset,
+        role: CloudSyncMediaRole,
+        expectedEntry: DailyPhotoEntry,
+        summary: inout SyncSummary
+    ) async {
+        guard let savedFileName = stageRemoteMedia(media, role: role) else {
             summary.skippedMediaCount += 1
             return
         }
 
-        try await remoteStore.save(media: CloudSyncMediaAsset(
-            localDateString: localDateString,
-            role: role,
-            fileName: fileName,
-            updatedAtUTC: updatedAtUTC,
-            assetFileURL: assetURL
-        ))
-        summary.uploadedMediaCount += 1
+        do {
+            var updatedEntry = expectedEntry
+            if role == .image {
+                updatedEntry.imageLocalPath = savedFileName
+            } else {
+                updatedEntry.thumbnailLocalPath = savedFileName
+            }
+
+            if try await entryRepository.upsert(updatedEntry, replacing: expectedEntry) {
+                summary.downloadedMediaCount += 1
+            } else if savedFileName != expectedEntry.imageLocalPath,
+                      savedFileName != expectedEntry.thumbnailLocalPath {
+                try? imageStorageService.deleteFileIfExists(at: savedFileName)
+                summary.skippedMediaCount += 1
+            }
+        } catch {
+            if savedFileName != expectedEntry.imageLocalPath,
+               savedFileName != expectedEntry.thumbnailLocalPath {
+                try? imageStorageService.deleteFileIfExists(at: savedFileName)
+            }
+            summary.skippedMediaCount += 1
+        }
+    }
+
+    private func stageRemoteMedia(
+        _ media: CloudSyncMediaAsset,
+        role: CloudSyncMediaRole
+    ) -> String? {
+        let remoteFileName = imageStorageService.normalizedMediaReference(for: media.fileName)
+        guard remoteFileName.isEmpty == false, let assetFileURL = media.assetFileURL else {
+            return nil
+        }
+
+        let baseName = URL(fileURLWithPath: remoteFileName).deletingPathExtension().lastPathComponent
+        let stagedFileName = "\(baseName)-sync-\(role.rawValue)-\(UUID().uuidString).jpg"
+        guard let savedFileName = try? imageStorageService.saveSyncedMediaFile(
+            from: assetFileURL,
+            preferredFileName: stagedFileName
+        ), let savedURL = imageStorageService.resolvedFileURL(for: savedFileName), UIImage(contentsOfFile: savedURL.path) != nil else {
+            try? imageStorageService.deleteFileIfExists(at: stagedFileName)
+            return nil
+        }
+        return savedFileName
+    }
+
+    private func preferredMediaRecordsByRole(
+        _ records: [CloudSyncMediaAsset]
+    ) -> [CloudSyncMediaRole: CloudSyncMediaAsset] {
+        records.reduce(into: [:]) { result, record in
+            if let current = result[record.role], current.updatedAtUTC > record.updatedAtUTC {
+                return
+            }
+            result[record.role] = record
+        }
     }
 
     private func shouldRemoteWin(_ remoteEntry: CloudSyncEntryRecord, over localEntry: DailyPhotoEntry) -> Bool {
