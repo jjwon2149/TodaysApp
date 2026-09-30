@@ -1,6 +1,6 @@
 # CloudKit Sync Design
 
-Status: design contract for PHO-50, blocked from implementation until the media path contract and export QA pass in baseline code.
+Status: implemented sync baseline with next-release recovery work in progress. Release acceptance is tracked in `reliability-release-checklist.md`; this document does not certify production CloudKit QA.
 
 ## Current Storage Contract
 
@@ -62,6 +62,15 @@ Use a private CloudKit database only.
 - Missing thumbnail asset: regenerate from the original image when possible. If regeneration fails, use original-image fallback in UI and export.
 - Export packages include manifest warnings for missing media instead of silently dropping entries.
 - CloudKit implementation must use the same resolver as local UI/export, so stale container paths never drive upload decisions.
+
+## Recovery Acceptance Contract
+
+- Equal entry timestamps do not prove that original/thumbnail transfers completed. Reconcile media separately, including partial transfers created by previous app versions.
+- Failed downloads preserve existing readable local media; a later sync must retry missing or outdated assets after app restart.
+- Never repair an active photo over a winning tombstone, or apply a stale local snapshot over a concurrent edit.
+- An incomplete media run must not be presented as fully synced. Profile offers the existing manual sync action for retry.
+- Successful repeated sync must not upload unchanged complete media again.
+- Keep the current CloudKit record fields and persisted profile XP field compatible; this release removes unearned XP presentation rather than adding a progression system.
 
 ## MVP Sync Flow
 
