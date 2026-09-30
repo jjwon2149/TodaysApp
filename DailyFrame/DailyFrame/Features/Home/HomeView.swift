@@ -394,13 +394,13 @@ struct HomeView: View {
         AppCard {
             VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
                 Label(
-                    isPartial ? "home.load.partial.title" : "home.load.error.title",
+                    L10n.string(isPartial ? "home.load.partial.title" : "home.load.error.title"),
                     systemImage: "exclamationmark.arrow.triangle.2.circlepath"
                 )
                 .font(.system(.headline, design: .rounded, weight: .semibold))
                 .foregroundStyle(AppTheme.Colors.textPrimary)
 
-                Text(isPartial ? "home.load.partial.message" : "home.load.error.message")
+                Text(L10n.string(isPartial ? "home.load.partial.message" : "home.load.error.message"))
                     .font(.system(.subheadline, design: .rounded))
                     .foregroundStyle(AppTheme.Colors.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)

@@ -380,7 +380,7 @@ struct EntryEditorView: View {
         viewModel.canSave == false
     }
 
-    private func optionalSectionHeader(titleKey: String) -> some View {
+    private func optionalSectionHeader(titleKey: LocalizedStringKey) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: AppTheme.Spacing.small) {
             Text(titleKey)
                 .font(.system(.headline, design: .rounded, weight: .semibold))
