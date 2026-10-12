@@ -49,9 +49,9 @@ This is a release checklist, not legal advice.
 
 ## Placement and Format Checks
 
-- Allowed format for MVP: banner only.
+- Allowed format: standard SDK 320×50 banner only. Allowed screens: Home, Calendar, Profile; anchored at the bottom inside the safe area above the tab bar.
 - Forbidden formats: interstitial, rewarded, native, app-open.
-- Forbidden placements: EntryEditor, camera capture, photo picker, save completion, widget, and immediate deep-link entry.
+- Forbidden placements: onboarding, entry detail, EntryEditor, camera capture, photo picker, save completion, widget, and immediate deep-link entry. A banner belongs to the browsing screen content, never the root TabView or a presented workflow.
 - No-fill, offline, consent-blocked, or SDK failure states must collapse the ad slot and leave no empty UI.
 
 ## Public Documentation Checks
