@@ -125,12 +125,14 @@ final class HomeProfileStreakContractTests: DomainTestFixture {
         XCTAssertEqual(homeViewModel.isTodayMissionCompleted, false)
     }
 
-    func testBannerPlacementPolicyAllowsOnlyProfileBannerForMVP() {
-        XCTAssertTrue(BannerAdPlacementPolicy.permitsBanner(on: .profile))
+    func testBannerPlacementPolicyAllowsBrowsingScreensOnly() {
+        for surface in [BannerAdPlacementPolicy.Surface.home, .calendar, .profile] {
+            XCTAssertTrue(BannerAdPlacementPolicy.permitsBanner(on: surface))
+        }
 
         let blockedSurfaces: [BannerAdPlacementPolicy.Surface] = [
-            .home,
-            .calendar,
+            .onboarding,
+            .entryDetail,
             .entryEditor,
             .cameraCapture,
             .photoPicker,

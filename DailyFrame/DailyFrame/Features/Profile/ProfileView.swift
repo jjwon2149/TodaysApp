@@ -57,11 +57,11 @@ struct ProfileView: View {
                     exportSection
                         .profileSectionSpacing()
                     privacySection
-                    profileBannerPlacement
                 }
                 .padding(AppTheme.Spacing.medium)
             }
             .background(AppTheme.Colors.background)
+            .bottomBanner(on: .profile)
             .navigationTitle(L10n.string("tab.profile"))
             .task {
                 await viewModel.load()
@@ -410,25 +410,6 @@ struct ProfileView: View {
         .accessibilityElement(children: .contain)
     }
 
-    @ViewBuilder
-    private var profileBannerPlacement: some View {
-        if BannerAdPlacementPolicy.permitsBanner(on: .profile) {
-            ProfileFooterBannerAdPlacement()
-        }
-    }
-}
-
-private struct ProfileFooterBannerAdPlacement: View {
-    @State private var isVisible = false
-
-    var body: some View {
-        BannerAdView { isLoaded in
-            isVisible = isLoaded
-        }
-        .padding(.top, isVisible ? AppTheme.Spacing.large : 0)
-        .accessibilityLabel(Text("profile.ad.banner.accessibility_label"))
-        .accessibilityHint(Text("profile.ad.banner.accessibility_hint"))
-    }
 }
 
 private extension View {

@@ -3,6 +3,8 @@ enum BannerAdPlacementPolicy {
         case home
         case calendar
         case profile
+        case onboarding
+        case entryDetail
         case entryEditor
         case cameraCapture
         case photoPicker
@@ -13,10 +15,10 @@ enum BannerAdPlacementPolicy {
 
     static func permitsBanner(on surface: Surface) -> Bool {
         switch surface {
-        case .profile:
+        case .home, .calendar, .profile:
             return true
-        case .home,
-             .calendar,
+        case .onboarding,
+             .entryDetail,
              .entryEditor,
              .cameraCapture,
              .photoPicker,

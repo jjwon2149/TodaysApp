@@ -45,6 +45,7 @@ struct HomeView: View {
                 .padding(AppTheme.Spacing.medium)
             }
             .background(AppTheme.Colors.background)
+            .bottomBanner(on: .home)
             .navigationBarTitleDisplayMode(.inline)
             .task(id: shouldPromptFirstRecordAfterOnboarding) {
                 await viewModel.load()

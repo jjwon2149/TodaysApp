@@ -77,6 +77,7 @@ struct CalendarView: View {
                 .padding(AppTheme.Spacing.medium)
             }
             .background(AppTheme.Colors.background)
+            .bottomBanner(on: .calendar)
             .navigationTitle(L10n.string("tab.calendar"))
             .task {
                 await viewModel.loadMonth()

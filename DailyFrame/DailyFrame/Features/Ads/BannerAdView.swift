@@ -5,6 +5,7 @@ import UIKit
 struct BannerAdView: View {
     @EnvironmentObject private var adsService: AdsService
     @State private var loadState: BannerAdLoadState = .idle
+    @State private var availableWidth: CGFloat = 0
 
     private let onVisibilityChange: (Bool) -> Void
 
@@ -15,19 +16,30 @@ struct BannerAdView: View {
     var body: some View {
         if adsService.canRequestAds, let adUnitID = AdConfiguration.bannerAdUnitID {
             GeometryReader { proxy in
-                let width = max(proxy.size.width, 1)
-                let adSize = largeAnchoredAdaptiveBanner(width: width)
-
-                BannerAdContainer(adUnitID: adUnitID, adSize: adSize) { nextState in
-                    loadState = nextState
-                    onVisibilityChange(nextState.isLoaded)
+                if proxy.size.width >= AdSizeBanner.size.width {
+                    BannerAdContainer(adUnitID: adUnitID, adSize: AdSizeBanner) { nextState in
+                        loadState = nextState
+                        onVisibilityChange(nextState.isLoaded)
+                    }
+                    .frame(width: AdSizeBanner.size.width, height: AdSizeBanner.size.height)
+                    .frame(maxWidth: .infinity)
+                    .opacity(loadState.isLoaded ? 1 : 0)
                 }
-                .frame(width: adSize.size.width, height: loadState.height)
-                .frame(maxWidth: .infinity)
+                Color.clear
+                    .allowsHitTesting(false)
+                    .onAppear { availableWidth = proxy.size.width }
+                    .onChange(of: proxy.size.width) { _, width in
+                        availableWidth = width
+                        if width < AdSizeBanner.size.width {
+                            loadState = .idle
+                            onVisibilityChange(false)
+                        }
+                    }
             }
-            .frame(height: loadState.height)
+            .frame(height: availableWidth >= AdSizeBanner.size.width ? loadState.height : 0)
             .clipped()
-            .accessibilityHidden(loadState.isLoaded == false)
+            .accessibilityHidden(!(loadState.isLoaded) || availableWidth < AdSizeBanner.size.width)
+            .padding(.top, loadState.isLoaded && availableWidth >= AdSizeBanner.size.width ? 8 : 0)
             .onAppear {
                 onVisibilityChange(loadState.isLoaded)
             }
@@ -153,5 +165,18 @@ private extension UIViewController {
         }
 
         return self
+    }
+}
+
+extension View {
+    func bottomBanner(on surface: BannerAdPlacementPolicy.Surface) -> some View {
+        safeAreaInset(edge: .bottom, spacing: 0) {
+            if BannerAdPlacementPolicy.permitsBanner(on: surface) {
+                BannerAdView()
+                    .background(AppTheme.Colors.background)
+                    .accessibilityLabel(Text("profile.ad.banner.accessibility_label"))
+                    .accessibilityHint(Text("profile.ad.banner.accessibility_hint"))
+            }
+        }
     }
 }
